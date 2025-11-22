@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KUTER - System Grafik v7.8</title>
+    <title>KUTER - System Grafik v7.9</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -20,17 +20,46 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
-    <!-- Шрифты -->
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        
+        /* --- STYLES FOR PRINT (A4 OPTIMIZED) --- */
         @media print {
+            @page {
+                size: A4 landscape;
+                margin: 5mm;
+            }
+            body { 
+                background: white; 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact;
+                zoom: 0.65; /* Scale down to fit A4 */
+            }
             .no-print { display: none !important; }
             .print-show { display: block !important; }
-            body { background: white; }
-            .card { box-shadow: none; border: 1px solid #ddd; }
-            table { width: 100%; font-size: 11px; border-collapse: collapse; }
-            th, td { border: 1px solid #000 !important; padding: 2px !important; }
+            
+            /* Hide scrollbars and layout fluff */
+            ::-webkit-scrollbar { display: none; }
+            body, #root, main { height: auto !important; overflow: visible !important; }
+            
+            /* Clean Table for Print */
+            table { width: 100%; border-collapse: collapse; font-size: 12px; }
+            th, td { 
+                border: 1px solid #333 !important; 
+                padding: 4px !important; 
+                page-break-inside: avoid;
+            }
+            /* Header cleanup */
+            h1 { font-size: 24px; color: black; margin-bottom: 10px; }
+            
+            /* Remove colorful backgrounds for ink saving, keep borders */
+            .bg-indigo-50\/30, .bg-orange-50\/30, .bg-blue-50\/30 { background-color: transparent !important; }
+            
+            /* Badges becomes simple text boxes */
+            .rounded { border-radius: 0 !important; }
         }
         .print-show { display: none; }
         
@@ -56,7 +85,7 @@
             errDiv.innerHTML = '<h3>CRITICAL ERROR:</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("--- KUTER SYSTEM v7.8 LOADED ---");
+        console.log("--- KUTER SYSTEM v7.9 LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -72,7 +101,6 @@
             appId: "1:605834476831:web:8da87595b0acb2beb7c42a"
         };
 
-        // Initialize Firebase
         let app, auth, db;
         try {
             if (!firebase.apps.length) {
@@ -99,8 +127,9 @@
             addBtn: "Dodaj pracownika",
             namePlaceholder: "Imię i nazwisko...",
             genBtn: "Generuj Grafik",
-            exportCsv: "Eksport Excel (CSV)",
-            printBtn: "Drukuj",
+            optimizeBtn: "⚖️ Optymalizacja",
+            exportGoogle: "📋 Kopiuj do Google Sheets",
+            printBtn: "🖨️ Drukuj (A4)",
             dateCol: "Data",
             barCol: "Bar",
             morningCol: "Rano (10:00)",
@@ -119,7 +148,9 @@
             generate: "Start",
             deleteConfirm: "Czy zarchiwizować pracownika?",
             deleteSub: "Zniknie z listy aktywnej, ale zostanie w historii.",
-            errorAuth: "Błąd logowania. Sprawdź dane."
+            errorAuth: "Błąd logowania. Sprawdź dane.",
+            copySuccess: "Skopiowano! Wklej (Ctrl+V) w Google Sheets.",
+            optimizing: "Optymalizacja..."
         };
 
         // --- CLOCK ---
@@ -160,8 +191,9 @@
             const [addingToSlot, setAddingToSlot] = useState(null);
             const [personToRemove, setPersonToRemove] = useState(null);
             const [genSettings, setGenSettings] = useState(null);
+            const [isOptimizing, setIsOptimizing] = useState(false);
 
-            // Auth Listener
+            // Auth
             useEffect(() => {
                 const unsub = auth.onAuthStateChanged(u => {
                     setUser(u);
@@ -171,7 +203,7 @@
                 return () => unsub();
             }, []);
 
-            // Data Listener
+            // Data
             useEffect(() => {
                 if(!user || !db) return;
                 setLoading(true);
@@ -200,7 +232,6 @@
                 setCurrentDate(newDate);
             };
 
-            // --- UTILS ---
             const getBarmanArray = (shift) => {
                 if (!shift || !shift.barman) return [];
                 if (Array.isArray(shift.barman)) return shift.barman;
@@ -223,8 +254,8 @@
                         barmen.forEach((bid, index) => {
                             if(s[bid]) {
                                 let hours = 12;
-                                if (dayOfWeek === 5 && index > 0) hours = 7; // Fri 2nd
-                                else if (dayOfWeek === 0 && index > 0) hours = 6; // Sun 2nd
+                                if (dayOfWeek === 5 && index > 0) hours = 7; 
+                                else if (dayOfWeek === 0 && index > 0) hours = 6; 
                                 s[bid].h += hours;
                                 if(getPerson(bid)?.role === 'waiter') s[bid].covers++;
                             }
@@ -312,27 +343,42 @@
                 setAddingToSlot(null);
             };
 
-            // --- GENERATOR ---
-            
-            // ВОТ ОНА - ФУНКЦИЯ ОТКРЫТИЯ НАСТРОЕК, КОТОРАЯ БЫЛА ПОТЕРЯНА
-            const openGenSettings = () => {
+            // --- COPY TO GOOGLE SHEETS (TSV FORMAT) ---
+            const copyToGoogleSheets = () => {
+                const year = currentDate.getFullYear();
                 const month = currentDate.getMonth();
-                const isHighSeason = month >= 4 && month <= 8;
-                setGenSettings({
-                    show: true,
-                    total: isHighSeason ? 6 : 4,
-                    morning: isHighSeason ? 3 : 2
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                
+                // TSV header
+                let tsvContent = "Data\tDzień\tŚwięto\tBar\tRano\tPopołudnie\n";
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const d = new Date(year, month, day);
+                    const dateStr = d.toLocaleDateString('en-CA');
+                    const dateDisplay = d.toLocaleDateString('pl-PL');
+                    const dayName = d.toLocaleDateString('pl-PL', { weekday: 'long' });
+                    const isHol = holidays.includes(dateStr) ? "TAK" : "";
+                    const s = schedule[dateStr] || { morning: [], evening: [], barman: [] };
+                    
+                    const barmen = getBarmanArray(s);
+                    const barNames = barmen.map(id => getPerson(id)?.name || "").join(", ");
+                    const mornNames = s.morning.map(id => getPerson(id)?.name || "").join(", ");
+                    const eveNames = s.evening.map(id => getPerson(id)?.name || "").join(", ");
+                    
+                    tsvContent += `${dateDisplay}\t${dayName}\t${isHol}\t${barNames}\t${mornNames}\t${eveNames}\n`;
+                }
+
+                navigator.clipboard.writeText(tsvContent).then(() => {
+                    alert(TEXT.copySuccess);
+                }, (err) => {
+                    console.error('Async: Could not copy text: ', err);
                 });
             };
 
-            const runGenerator = async () => {
-                if(!genSettings) return;
-                const { total, morning } = genSettings;
-                const year = currentDate.getFullYear();
-                const month = currentDate.getMonth();
+            // --- CORE GENERATOR FUNCTION (Pure logic) ---
+            const generateScheduleData = (peopleList, year, month, totalNeeded, morningNeeded) => {
                 const daysCount = new Date(year, month + 1, 0).getDate();
-                
-                let pool = people.filter(p => !p.archived).map(p => ({ ...p, hours: 0, streak: 0, barCount: 0 }));
+                let pool = peopleList.filter(p => !p.archived).map(p => ({ ...p, hours: 0, streak: 0, barCount: 0 }));
                 const newSched = {};
 
                 const getScore = (p, role) => {
@@ -348,18 +394,15 @@
                     const dayOfWeek = dateObj.getDay();
                     const available = pool.filter(p => !p.daysOff.includes(dateStr));
                     
+                    // BAR
                     let selectedBarmen = [];
                     let realBarmans = available.filter(p => p.role === 'bartender').sort((a,b) => getScore(a,'bartender') - getScore(b,'bartender'));
                     const isWeekendHigh = (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0);
                     const neededBarmen = isWeekendHigh ? 2 : 1;
 
-                    while (selectedBarmen.length < neededBarmen && realBarmans.length > 0) {
-                        selectedBarmen.push(realBarmans.shift());
-                    }
+                    while (selectedBarmen.length < neededBarmen && realBarmans.length > 0) selectedBarmen.push(realBarmans.shift());
                     if (selectedBarmen.length < neededBarmen) {
-                        let waiterBarmans = available
-                            .filter(p => p.role === 'waiter' && !selectedBarmen.includes(p))
-                            .sort((a,b) => getScore(a,'bartender') - getScore(b,'bartender'));
+                        let waiterBarmans = available.filter(p => p.role === 'waiter' && !selectedBarmen.includes(p)).sort((a,b) => getScore(a,'bartender') - getScore(b,'bartender'));
                         while (selectedBarmen.length < neededBarmen && waiterBarmans.length > 0) {
                             const w = waiterBarmans.shift();
                             selectedBarmen.push(w);
@@ -376,12 +419,10 @@
                     });
                     const barmanIds = selectedBarmen.map(b => b.id);
 
-                    let needed = total;
-                    let mornNeeded = morning;
+                    // WAITERS
                     let waiterCands = available.filter(p => p.role === 'waiter' && !barmanIds.includes(p.id));
                     const barHasMale = selectedBarmen.some(b => b.gender === 'male');
                     let selectedWaiters = [];
-
                     if(!barHasMale) {
                         const males = waiterCands.filter(w => w.gender === 'male').sort((a,b) => getScore(a,'waiter') - getScore(b,'waiter'));
                         if(males.length > 0 && males[0].streak < 5) {
@@ -390,60 +431,84 @@
                         }
                     }
                     waiterCands.sort((a,b) => getScore(a,'waiter') - getScore(b,'waiter'));
-                    while(selectedWaiters.length < needed && waiterCands.length > 0) selectedWaiters.push(waiterCands.shift());
+                    while(selectedWaiters.length < totalNeeded && waiterCands.length > 0) selectedWaiters.push(waiterCands.shift());
 
                     selectedWaiters.forEach(w => {
                         const p = pool.find(x => x.id === w.id);
                         p.hours += 10.5;
                         p.streak++;
                     });
-                    
+
                     const workedIds = [...barmanIds, ...selectedWaiters.map(w=>w.id)];
                     pool.forEach(p => { if(!workedIds.includes(p.id)) p.streak = 0; });
 
                     selectedWaiters.sort((a,b) => a.hours - b.hours);
-                    const morningCrew = selectedWaiters.slice(0, mornNeeded).map(w => w.id);
-                    const eveningCrew = selectedWaiters.slice(mornNeeded).map(w => w.id);
+                    const morningCrew = selectedWaiters.slice(0, morningNeeded).map(w => w.id);
+                    const eveningCrew = selectedWaiters.slice(morningNeeded).map(w => w.id);
 
                     newSched[dateStr] = { barman: barmanIds, morning: morningCrew, evening: eveningCrew };
                 }
-                await db.doc(`${getUserRef()}/appData/schedule`).set(newSched, {merge: true});
-                setGenSettings(null);
-                setActiveTab('calendar');
+                
+                // Calculate variance (Balance score) - lower is better
+                const hours = pool.map(p => p.hours);
+                const max = Math.max(...hours);
+                const min = Math.min(...hours);
+                const diff = max - min;
+
+                return { schedule: newSched, diff: diff, pool: pool };
             };
 
-            const downloadCSV = () => {
-                const year = currentDate.getFullYear();
+
+            const openGenSettings = () => {
                 const month = currentDate.getMonth();
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                let csvContent = "\uFEFFData;Dzien;Swieto;Bar;Rano;Popoludnie\n";
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const d = new Date(year, month, day);
-                    const dateStr = d.toLocaleDateString('en-CA');
-                    const dateDisplay = d.toLocaleDateString('pl-PL');
-                    const dayName = d.toLocaleDateString('pl-PL', { weekday: 'long' });
-                    const isHol = holidays.includes(dateStr) ? "TAK" : "";
-                    const s = schedule[dateStr] || { morning: [], evening: [], barman: [] };
-                    const barmen = getBarmanArray(s);
-                    const barNames = barmen.map(id => getPerson(id)?.name || "").join(", ");
-                    const mornNames = s.morning.map(id => getPerson(id)?.name || "").join(", ");
-                    const eveNames = s.evening.map(id => getPerson(id)?.name || "").join(", ");
-                    csvContent += `${dateDisplay};${dayName};${isHol};${barNames};${mornNames};${eveNames}\n`;
+                const isHighSeason = month >= 4 && month <= 8;
+                setGenSettings({
+                    show: true,
+                    total: isHighSeason ? 6 : 4,
+                    morning: isHighSeason ? 3 : 2,
+                    optimize: false
+                });
+            };
+
+            // --- OPTIMIZATION WRAPPER ---
+            const runGenerator = async (shouldOptimize) => {
+                if(!genSettings) return;
+                const { total, morning } = genSettings;
+                
+                if (shouldOptimize) {
+                    setIsOptimizing(true);
+                    // Delay to render loading state
+                    setTimeout(async () => {
+                        let bestResult = null;
+                        // Run 50 simulations
+                        for(let i=0; i<50; i++) {
+                            const result = generateScheduleData(people, currentDate.getFullYear(), currentDate.getMonth(), total, morning);
+                            if (!bestResult || result.diff < bestResult.diff) {
+                                bestResult = result;
+                            }
+                        }
+                        // Save best
+                        await db.doc(`${getUserRef()}/appData/schedule`).set(bestResult.schedule, {merge: true});
+                        setIsOptimizing(false);
+                        setGenSettings(null);
+                        setActiveTab('calendar');
+                    }, 100);
+                } else {
+                    // Standard run (1 time)
+                    const result = generateScheduleData(people, currentDate.getFullYear(), currentDate.getMonth(), total, morning);
+                    await db.doc(`${getUserRef()}/appData/schedule`).set(result.schedule, {merge: true});
+                    setGenSettings(null);
+                    setActiveTab('calendar');
                 }
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.download = `Grafik_KUTER_${year}_${month+1}.csv`;
-                link.click();
             };
 
             // --- RENDER ---
             if(!isAuthReady) return <div className="flex h-screen items-center justify-center"><div className="loader"></div></div>;
             if(!user) return <AuthScreen />;
-            // if(loading) return <div className="flex h-screen items-center justify-center"><div className="loader"></div><span className="ml-3 text-slate-500">{TEXT.loadingData}</span></div>;
-
+            
             return (
                 <div className="min-h-screen flex flex-col">
+                    {/* HEADER */}
                     <nav className="bg-slate-900 text-white shadow-lg no-print">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                             <div className="flex justify-between h-20">
@@ -486,6 +551,11 @@
                     </nav>
 
                     <main className="flex-grow bg-slate-50 p-4 sm:p-8 max-w-7xl mx-auto w-full">
+                        {/* PRINT HEADER (VISIBLE ONLY IN PRINT) */}
+                        <div className="hidden print-show mb-4 border-b pb-2">
+                            <h1 className="text-2xl font-bold">{TEXT.appName} - Grafik: {getMonthName(currentDate)}</h1>
+                        </div>
+
                         {activeTab === 'staff' && (
                             <div className="space-y-8">
                                 <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 no-print">
@@ -542,8 +612,10 @@
                                 <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 no-print">
                                     <div className="text-sm text-slate-500">ℹ️ Kliknij <span className="font-bold text-yellow-600">★</span> aby oznaczyć święto.</div>
                                     <div className="flex gap-2">
-                                        <button onClick={downloadCSV} className="bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 text-slate-700">📥 {TEXT.exportCsv}</button>
-                                        <button onClick={()=>window.print()} className="bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 text-slate-700">🖨️ {TEXT.printBtn}</button>
+                                        <button onClick={copyToGoogleSheets} className="bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 text-emerald-700 border-emerald-200">
+                                            {TEXT.exportGoogle}
+                                        </button>
+                                        <button onClick={()=>window.print()} className="bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 text-slate-700">{TEXT.printBtn}</button>
                                     </div>
                                 </div>
                                 <div className="overflow-x-auto">
@@ -660,6 +732,7 @@
                         )}
                     </main>
 
+                    {/* SMART ADDING MODAL */}
                     {addingToSlot && (
                         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={()=>setAddingToSlot(null)}>
                             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]" onClick={e=>e.stopPropagation()}>
@@ -721,9 +794,18 @@
                                         <input type="number" value={genSettings.morning} onChange={e=>setGenSettings({...genSettings, morning: parseInt(e.target.value)})} className="w-full border border-slate-300 rounded-lg p-3 text-lg font-semibold text-center" />
                                     </div>
                                 </div>
-                                <div className="flex gap-3 mt-8">
-                                    <button onClick={()=>setGenSettings(null)} className="flex-1 py-3 text-slate-600 font-medium hover:bg-slate-100 rounded-xl">{TEXT.cancel}</button>
-                                    <button onClick={runGenerator} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition">{TEXT.generate}</button>
+                                <div className="flex flex-col gap-3 mt-8">
+                                    {isOptimizing ? (
+                                        <div className="text-center py-4 text-blue-600 font-bold animate-pulse">{TEXT.optimizing}</div>
+                                    ) : (
+                                        <>
+                                            <div className="flex gap-3">
+                                                <button onClick={()=>runGenerator(false)} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl shadow hover:bg-blue-700 transition">{TEXT.generate}</button>
+                                                <button onClick={()=>runGenerator(true)} className="flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow hover:bg-emerald-700 transition">{TEXT.optimizeBtn}</button>
+                                            </div>
+                                            <button onClick={()=>setGenSettings(null)} className="w-full py-3 text-slate-500 hover:bg-slate-100 rounded-xl">{TEXT.cancel}</button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
