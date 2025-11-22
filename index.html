@@ -15,12 +15,12 @@
     <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Firebase (Compat) -->
+    <!-- Firebase (Compat) - Стабильная версия -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
-    <!-- Шрифты и стили -->
+    <!-- Шрифты -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
@@ -48,19 +48,20 @@
 <body class="text-slate-800">
     <div id="root"></div>
 
+    <!-- Блок для отлова критических ошибок -->
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
-            document.body.innerHTML += '<div style="color:red; background:white; padding:20px; border:2px solid red; margin:20px;">' +
-                '<h3>Critical Error:</h3>' +
-                '<p>' + message + '</p>' +
-                '<p>Line: ' + lineno + '</p>' +
-                '</div>';
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = 'color:red; background:white; padding:20px; border:2px solid red; margin:20px; z-index:9999; position:relative;';
+            errDiv.innerHTML = '<h3>Critical Error:</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
+            document.body.prepend(errDiv);
         };
     </script>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
+        // --- КОНФИГУРАЦИЯ FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyDPIZCV4h6Crh254OtZExUaLQtAgjWS1iM",
             authDomain: "grafikmistrz.firebaseapp.com",
@@ -70,6 +71,7 @@
             appId: "1:605834476831:web:8da87595b0acb2beb7c42a"
         };
 
+        // Инициализация Firebase
         let app, auth, db;
         try {
             if (!firebase.apps.length) {
@@ -82,9 +84,9 @@
             console.log("Firebase OK");
         } catch (e) {
             console.error("Firebase Init Error:", e);
-            document.body.innerHTML = `<div style="color:red; padding:20px">Firebase Init Error: ${e.message}</div>`;
         }
 
+        // --- ТЕКСТЫ ---
         const TEXT = {
             appName: "KUTER",
             appSub: "Smażalnia & Grill",
@@ -119,6 +121,7 @@
             errorAuth: "Błąd logowania. Sprawdź dane."
         };
 
+        // --- ЧАСЫ ---
         function LiveClock() {
             const [time, setTime] = useState(new Date());
             useEffect(() => {
@@ -137,6 +140,7 @@
             );
         }
 
+        // --- APP ---
         function App() {
             const [user, setUser] = useState(null);
             const [isAuthReady, setIsAuthReady] = useState(false);
@@ -232,11 +236,9 @@
                 return s;
             }, [people, schedule, currentDate]);
 
-            // --- STREAK CHECKER ---
             const getStreak = (pid, dateStr) => {
                 const d = new Date(dateStr);
                 let streak = 0;
-                // Проверяем предыдущие 5 дней
                 for(let i=1; i<=5; i++) {
                     const prev = new Date(d);
                     prev.setDate(d.getDate() - i);
@@ -303,42 +305,25 @@
             const addToShift = async (dateStr, type, personId) => {
                 const shift = schedule[dateStr] || { date: dateStr, morning: [], evening: [], barman: [] };
                 let newShift = { ...shift };
-                
                 if (type === 'bar') {
                     const prev = getBarmanArray(shift);
                     newShift.barman = [...prev, personId];
                 } else {
                     newShift[type] = [...(shift[type] || []), personId];
                 }
-                
                 await db.doc(`${getUserRef()}/appData/schedule`).set({ [dateStr]: newShift }, { merge: true });
                 setAddingToSlot(null);
             };
 
-            const downloadCSV = () => {
-                const year = currentDate.getFullYear();
+            // --- ВОТ ОНА, ПОТЕРЯННАЯ ФУНКЦИЯ ---
+            const openGenSettings = () => {
                 const month = currentDate.getMonth();
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                let csvContent = "\uFEFFData;Dzien;Swieto;Bar;Rano;Popoludnie\n";
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const d = new Date(year, month, day);
-                    const dateStr = d.toLocaleDateString('en-CA');
-                    const dateDisplay = d.toLocaleDateString('pl-PL');
-                    const dayName = d.toLocaleDateString('pl-PL', { weekday: 'long' });
-                    const isHol = holidays.includes(dateStr) ? "TAK" : "";
-                    const s = schedule[dateStr] || { morning: [], evening: [], barman: [] };
-                    
-                    const barmen = getBarmanArray(s);
-                    const barNames = barmen.map(id => getPerson(id)?.name || "").join(", ");
-                    const mornNames = s.morning.map(id => getPerson(id)?.name || "").join(", ");
-                    const eveNames = s.evening.map(id => getPerson(id)?.name || "").join(", ");
-                    csvContent += `${dateDisplay};${dayName};${isHol};${barNames};${mornNames};${eveNames}\n`;
-                }
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.download = `Grafik_KUTER_${year}_${month+1}.csv`;
-                link.click();
+                const isHighSeason = month >= 4 && month <= 8;
+                setGenSettings({
+                    show: true,
+                    total: isHighSeason ? 6 : 4,
+                    morning: isHighSeason ? 3 : 2
+                });
             };
 
             const runGenerator = async () => {
@@ -428,6 +413,34 @@
                 setActiveTab('calendar');
             };
 
+            const downloadCSV = () => {
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                let csvContent = "\uFEFF"; 
+                csvContent += "Data;Dzien;Swieto;Bar;Rano;Popoludnie\n";
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const d = new Date(year, month, day);
+                    const dateStr = d.toLocaleDateString('en-CA');
+                    const dateDisplay = d.toLocaleDateString('pl-PL');
+                    const dayName = d.toLocaleDateString('pl-PL', { weekday: 'long' });
+                    const isHol = holidays.includes(dateStr) ? "TAK" : "";
+                    const s = schedule[dateStr] || { morning: [], evening: [], barman: [] };
+                    
+                    const barmen = getBarmanArray(s);
+                    const barNames = barmen.map(id => getPerson(id)?.name || "").join(", ");
+                    const mornNames = s.morning.map(id => getPerson(id)?.name || "").join(", ");
+                    const eveNames = s.evening.map(id => getPerson(id)?.name || "").join(", ");
+                    csvContent += `${dateDisplay};${dayName};${isHol};${barNames};${mornNames};${eveNames}\n`;
+                }
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `Grafik_KUTER_${year}_${month+1}.csv`;
+                link.click();
+            };
+
+            // --- RENDER ---
             if(!isAuthReady) return <div className="flex h-screen items-center justify-center"><div className="loader"></div></div>;
             if(!user) return <AuthScreen />;
             
@@ -503,15 +516,14 @@
                                                                 <button onClick={()=>setPersonToRemove(p.id)} className="text-slate-300 hover:text-red-500 transition no-print">🗑️</button>
                                                             </div>
                                                             <div className="flex flex-wrap gap-1 no-print">
-                                                                {Array.from({ length: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate() }, (_, i) => i + 1).map(day => {
-                                                                    const dObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-                                                                    const dStr = dObj.toLocaleDateString('en-CA');
+                                                                {Array.from({length: new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate()}, (_, i)=>i+1).map(d => {
+                                                                    const dStr = new Date(currentDate.getFullYear(), currentDate.getMonth(), d).toLocaleDateString('en-CA');
                                                                     const isOff = p.daysOff.includes(dStr);
-                                                                    const isWknd = dObj.getDay()===0 || dObj.getDay()===6;
+                                                                    const isWknd = new Date(currentDate.getFullYear(), currentDate.getMonth(), d).getDay() % 6 === 0;
                                                                     return (
-                                                                        <button key={day} onClick={() => toggleDayOff(p.id, day)} 
-                                                                            className={`w-6 h-6 text-xs rounded ${isOff ? 'bg-red-500 text-white' : isWknd ? 'bg-gray-300' : 'bg-gray-100 hover:bg-gray-200'}`}>
-                                                                            {day}
+                                                                        <button key={d} onClick={()=>toggleDayOff(p.id, d)} 
+                                                                            className={`w-7 h-7 text-xs rounded font-medium transition ${isOff ? 'bg-red-500 text-white' : isWknd ? 'bg-slate-200 text-slate-600' : 'bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600'}`}>
+                                                                            {d}
                                                                         </button>
                                                                     )
                                                                 })}
@@ -535,40 +547,35 @@
                                     <div className="text-sm text-slate-500">ℹ️ Kliknij <span className="font-bold text-yellow-600">★</span> aby oznaczyć święto.</div>
                                     <div className="flex gap-2">
                                         <button onClick={downloadCSV} className="bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 text-slate-700">📥 {TEXT.exportCsv}</button>
-                                        <button onClick={() => window.print()} className="bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 text-slate-700">🖨️ {TEXT.printBtn}</button>
+                                        <button onClick={()=>window.print()} className="bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 text-slate-700">🖨️ {TEXT.printBtn}</button>
                                     </div>
                                 </div>
                                 <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
+                                    <table className="w-full text-left border-collapse">
                                         <thead>
-                                            <tr className="bg-gray-100 text-xs uppercase text-gray-500">
-                                                <th className="p-3 border">{TEXT.dateCol}</th>
-                                                <th className="p-3 border bg-purple-50">{TEXT.barCol}</th>
-                                                <th className="p-3 border bg-orange-50">{TEXT.morningCol}</th>
-                                                <th className="p-3 border bg-indigo-50">{TEXT.eveningCol}</th>
-                                                <th className="p-3 border text-center no-print">#</th>
+                                            <tr className="bg-slate-100 text-xs uppercase text-slate-500 tracking-wider">
+                                                <th className="p-4 font-bold border-b border-slate-200 w-24">{TEXT.dateCol}</th>
+                                                <th className="p-4 font-bold border-b border-slate-200 w-1/4 bg-indigo-50/50 text-indigo-900">{TEXT.barCol}</th>
+                                                <th className="p-4 font-bold border-b border-slate-200 w-1/3 bg-orange-50/50 text-orange-900">{TEXT.morningCol}</th>
+                                                <th className="p-4 font-bold border-b border-slate-200 w-1/3 bg-blue-50/50 text-blue-900">{TEXT.eveningCol}</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="text-sm">
-                                            {Array.from({ length: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate() }, (_, i) => i + 1).map(day => {
-                                                const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                                        <tbody className="text-sm text-slate-700 divide-y divide-slate-100">
+                                            {Array.from({length: new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate()}, (_, i)=>i+1).map(d => {
+                                                const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), d);
                                                 const dateStr = dateObj.toLocaleDateString('en-CA');
-                                                const isWknd = dateObj.getDay()===0 || dateObj.getDay()===6;
-                                                const isHoliday = holidays.includes(dateStr);
-                                                const shift = schedule[dateStr] || { morning: [], evening: [], barman: [] };
+                                                const isHol = holidays.includes(dateStr);
+                                                const isWknd = dateObj.getDay() % 6 === 0;
+                                                const s = schedule[dateStr] || { barman: [], morning: [], evening: [] };
                                                 
-                                                const rowClass = isHoliday ? 'bg-red-50' : (isWknd ? 'bg-gray-50' : '');
+                                                const rowClass = isHol ? 'bg-red-50' : isWknd ? 'bg-slate-50' : '';
 
-                                                // --- ВОЗВРАЩАЕМ ОГОНЕК 🔥 В ГРАФИК ---
                                                 const PersonBadge = ({uid, type, onDelete}) => {
                                                     const p = getPerson(uid);
                                                     if(!p) return null;
-                                                    
-                                                    // Проверка на переработку (4+ дня подряд)
+                                                    const isCover = type === 'bar' && p.role === 'waiter';
                                                     const streak = getStreak(uid, dateStr);
                                                     const isBurnout = streak >= 4;
-
-                                                    const isCover = type === 'bar' && p.role === 'waiter';
                                                     
                                                     let bgClass = '';
                                                     if (type === 'bar') bgClass = isCover ? 'bg-yellow-100 text-yellow-900 border-yellow-300 ring-1 ring-yellow-300' : 'bg-indigo-100 text-indigo-800 border-indigo-200';
@@ -584,53 +591,41 @@
                                                 };
 
                                                 return (
-                                                    <tr key={day} className={rowClass}>
-                                                        <td className="p-2 border font-bold w-20 align-top">
-                                                            <div className="flex justify-between items-start">
-                                                                <div>
-                                                                    <div className="text-lg">{day}</div>
-                                                                    <div className="text-xs font-normal text-gray-400">{dateObj.toLocaleDateString('pl-PL', {weekday:'short'})}</div>
-                                                                </div>
-                                                                <button 
-                                                                    onClick={() => toggleHoliday(dateStr)} 
-                                                                    title={TEXT.markHoliday}
-                                                                    className={`p-0.5 rounded print-hide-star ${isHoliday ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400'} no-print`}>
-                                                                    ⭐️
-                                                                </button>
-                                                                {isHoliday && <span className="hidden print-show text-yellow-500">⭐️</span>}
-                                                            </div>
+                                                    <tr key={d} className={rowClass}>
+                                                        <td className="p-3 align-top border-r border-slate-100 relative group">
+                                                            <div className="font-bold text-lg leading-none">{d}</div>
+                                                            <div className="text-xs text-slate-400 uppercase mt-1">{dateObj.toLocaleDateString('pl-PL', {weekday:'short'})}</div>
+                                                            <button onClick={()=>toggleHoliday(dateStr)} className={`absolute top-3 right-2 text-lg no-print transition ${isHol ? 'opacity-100' : 'opacity-0 group-hover:opacity-50 grayscale hover:grayscale-0'}`}>★</button>
                                                         </td>
-                                                        <td className="p-2 border bg-purple-50/30">
-                                                            <div className="flex flex-wrap gap-1">
-                                                                {getBarmanArray(shift).map(uid => (
-                                                                    <PersonBadge key={uid} uid={uid} type="bar" 
-                                                                        onDelete={() => removeFromShift(dateStr, 'bar', uid)} 
-                                                                    />
-                                                                ))}
-                                                                <button className="opacity-50 hover:opacity-100 text-indigo-600 font-bold no-print ml-1"
-                                                                    onClick={() => setAddingToSlot({ date: dateStr, type: 'bar' })}>
-                                                                    +
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                        {['morning', 'evening'].map(type => (
-                                                            <td key={type} className="p-2 border">
-                                                                <div className="flex flex-wrap gap-1">
-                                                                    {(shift[type] || []).map(uid => (
-                                                                        <PersonBadge key={uid} uid={uid} type={type === 'morning' ? 'morn' : 'eve'} 
-                                                                            onDelete={() => removeFromShift(dateStr, type, uid)} 
-                                                                        />
-                                                                    ))}
-                                                                    <button className="opacity-50 hover:opacity-100 text-indigo-600 font-bold no-print ml-1"
-                                                                        onClick={() => setAddingToSlot({ date: dateStr, type: type })}>
-                                                                        +
-                                                                    </button>
-                                                                </div>
-                                                            </td>
-                                                        ))}
-                                                        <td className="p-2 border text-center text-gray-400 text-xs no-print">
-                                                            {getBarmanArray(shift).length + (shift.morning || []).length + (shift.evening || []).length}
-                                                        </td>
+                                                        {['bar', 'morning', 'evening'].map(role => {
+                                                            const isBar = role === 'bar';
+                                                            const userIds = isBar ? getBarmanArray(s) : (role === 'morning' ? s.morning : s.evening);
+                                                            const bgColor = isBar ? 'bg-indigo-50/30' : role==='morning' ? 'bg-orange-50/30' : 'bg-blue-50/30';
+                                                            
+                                                            return (
+                                                                <td key={role} className={`p-2 align-top ${bgColor} border-r border-slate-100 relative hover:bg-opacity-100 transition group/cell`}>
+                                                                    <div className="min-h-[40px] flex flex-wrap">
+                                                                        {userIds.map(uid => (
+                                                                            <PersonBadge key={uid} uid={uid} type={isBar ? 'bar' : role==='morning' ? 'morn' : 'eve'} 
+                                                                                onDelete={async ()=>{
+                                                                                    const ns = {...s};
+                                                                                    if(isBar) {
+                                                                                        const prev = getBarmanArray(s);
+                                                                                        ns.barman = prev.filter(x=>x!==uid);
+                                                                                    }
+                                                                                    else ns[role] = ns[role].filter(x=>x!==uid);
+                                                                                    await db.doc(`${getUserRef()}/appData/schedule`).update({[dateStr]: ns});
+                                                                                }} 
+                                                                            />
+                                                                        ))}
+                                                                        <button className="absolute bottom-1 right-1 text-slate-300 hover:text-blue-600 no-print transition text-lg leading-none"
+                                                                            onClick={()=>setAddingToSlot({date: dateStr, type: isBar ? 'bar' : role})}>
+                                                                            ➕
+                                                                        </button>
+                                                                    </div>
+                                                                </td>
+                                                            )
+                                                        })}
                                                     </tr>
                                                 )
                                             })}
@@ -641,125 +636,188 @@
                         )}
 
                         {activeTab === 'stats' && (
-                            <div className="grid md:grid-cols-2 gap-6 no-print">
+                            <div className="grid md:grid-cols-2 gap-6">
                                 {[TEXT.secWaiters, TEXT.secBartenders].map((title, idx) => {
                                     const role = idx === 0 ? 'waiter' : 'bartender';
-                                    const list = people.filter(p => p.role === role).sort((a,b) => stats.hours[b.id] - stats.hours[a.id]);
-                                    const max = Math.max(...Object.values(stats.hours), 1);
+                                    const maxHours = Math.max(...Object.values(stats).map(s=>s.h), 1);
+                                    const list = people.filter(p => p.role === role && (!p.archived || stats[p.id]?.h > 0))
+                                        .sort((a,b) => stats[b.id].h - stats[a.id].h);
+                                    
                                     return (
-                                        <div key={role} className="bg-white p-6 rounded shadow border">
-                                            <h3 className="font-bold mb-4">{title}</h3>
-                                            {list.map(p => (
-                                                <div key={p.id} className="mb-3">
-                                                    <div className="flex justify-between text-sm mb-1">
-                                                        <span>{p.name}</span>
-                                                        <span className="font-bold">{stats.hours[p.id]} h {role==='waiter' && stats.covers[p.id]>0 && `(${stats.covers[p.id]} Bar)`}</span>
+                                        <div key={role} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                            <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 font-bold text-slate-700">{title}</div>
+                                            <div className="p-6 space-y-4">
+                                                {list.map(p => (
+                                                    <div key={p.id}>
+                                                        <div className="flex justify-between text-sm mb-1 font-medium text-slate-700">
+                                                            <span className={p.archived ? 'text-slate-400 line-through' : ''}>{p.name}</span>
+                                                            <span>{stats[p.id].h}h {role==='waiter' && stats[p.id].covers > 0 && <span className="text-yellow-600 font-bold text-xs ml-1">({stats[p.id].covers} Bar)</span>}</span>
+                                                        </div>
+                                                        <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                                            <div className={`h-2.5 rounded-full ${role==='waiter'?'bg-blue-500':'bg-indigo-500'} ${p.archived?'opacity-50':''}`} 
+                                                                style={{width: `${(stats[p.id].h / maxHours) * 100}%`}}></div>
+                                                        </div>
                                                     </div>
-                                                    <div className="w-full bg-gray-100 h-2 rounded overflow-hidden">
-                                                        <div className={`h-full ${role==='waiter'?'bg-indigo-500':'bg-purple-500'}`} style={{width: `${(stats.hours[p.id]/max)*100}%`}}></div>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                ))}
+                                            </div>
                                         </div>
                                     )
                                 })}
                             </div>
                         )}
+                    </main>
 
+                    {/* SMART ADDING MODAL */}
                     {addingToSlot && (
-                        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4 no-print" onClick={() => setAddingToSlot(null)}>
-                            <div className="bg-white rounded p-4 w-full max-w-xs shadow-xl" onClick={e => e.stopPropagation()}>
-                                <h3 className="font-bold mb-2">Wybierz:</h3>
-                                <div className="max-h-60 overflow-y-auto">
-                                    {people.filter(p => {
-                                        const shift = schedule[addingToSlot.date];
-                                        const barmen = getBarmanArray(shift);
-                                        // Не показываем, если уже работает в этот день
-                                        if (shift && (barmen.includes(p.id) || shift.morning.includes(p.id) || shift.evening.includes(p.id))) return false;
-                                        if (p.archived) return false;
-                                        return true;
-                                    }).map(p => (
-                                        <button key={p.id} onClick={() => addToShift(addingToSlot.date, addingToSlot.type, p.id)} 
-                                            className="w-full text-left p-2 hover:bg-gray-100 border-b flex justify-between">
-                                            <span>{p.name}</span>
-                                            {p.daysOff.includes(addingToSlot.date) && <span className="text-xs text-red-500 font-bold">Wolne!</span>}
-                                        </button>
-                                    ))}
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={()=>setAddingToSlot(null)}>
+                            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]" onClick={e=>e.stopPropagation()}>
+                                <div className="p-4 bg-slate-50 border-b border-slate-100 font-bold text-slate-800 flex justify-between">
+                                    <span>Dodaj: {addingToSlot.date} ({addingToSlot.type === 'bar' ? 'Bar' : addingToSlot.type === 'morning' ? 'Rano' : 'Popołudnie'})</span>
+                                    <button onClick={()=>setAddingToSlot(null)}>✕</button>
                                 </div>
-                                <button onClick={() => setAddingToSlot(null)} className="mt-2 w-full bg-gray-200 p-2 rounded">{TEXT.btnCancel}</button>
+                                <div className="overflow-y-auto p-2 flex-grow">
+                                    {people.filter(p => !p.archived).map(p => {
+                                        const s = schedule[addingToSlot.date];
+                                        const barmen = s ? getBarmanArray(s) : [];
+                                        const isWorking = s && (barmen.includes(p.id) || s.morning.includes(p.id) || s.evening.includes(p.id));
+                                        if(isWorking) return null;
+
+                                        const streak = getStreak(p.id, addingToSlot.date);
+                                        const isBurnout = streak >= 4;
+                                        const isDayOff = p.daysOff.includes(addingToSlot.date);
+                                        
+                                        const currentHours = stats[p.id]?.h || 0;
+                                        let addedHours = 10;
+                                        if (addingToSlot.type === 'bar' || addingToSlot.type === 'evening') addedHours = 12;
+                                        const projectedHours = currentHours + addedHours;
+
+                                        return (
+                                            <button key={p.id} disabled={isDayOff}
+                                                onClick={async ()=>{
+                                                    const ns = {...(schedule[addingToSlot.date] || {barman:[], morning:[], evening:[]})};
+                                                    if(addingToSlot.type === 'bar') {
+                                                        const prev = getBarmanArray(ns);
+                                                        ns.barman = [...prev, p.id];
+                                                    }
+                                                    else ns[addingToSlot.type] = [...ns[addingToSlot.type], p.id];
+                                                    await db.doc(`${getUserRef()}/appData/schedule`).set({[addingToSlot.date]: ns}, {merge:true});
+                                                    setAddingToSlot(null);
+                                                }} 
+                                                className={`w-full text-left px-4 py-3 mb-2 rounded-lg border flex justify-between items-center transition
+                                                    ${isDayOff ? 'bg-red-50 border-red-100 opacity-60 cursor-not-allowed' : 'bg-white border-slate-100 hover:border-blue-300 hover:shadow-md'}
+                                                `}>
+                                                <div>
+                                                    <div className="font-bold text-slate-800 flex items-center gap-2">
+                                                        {p.name}
+                                                        {isBurnout && <span title="Pracuje >4 dni z rzędu!" className="text-lg">🔥</span>}
+                                                        {p.role === 'waiter' && addingToSlot.type === 'bar' && <span className="text-xs bg-yellow-100 text-yellow-800 px-1.5 rounded">Zastępstwo</span>}
+                                                    </div>
+                                                    <div className="text-xs text-slate-500 mt-0.5">
+                                                        Godziny: {currentHours}h <span className="text-blue-600 font-bold">➝ ~{projectedHours}h</span>
+                                                    </div>
+                                                </div>
+                                                {isDayOff ? (
+                                                    <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-bold uppercase">Urlop / Wolne</span>
+                                                ) : (
+                                                    <span className="text-blue-600 font-bold text-xl">+</span>
+                                                )}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
                             </div>
                         </div>
                     )}
 
+                    {/* GEN SETTINGS MODAL */}
+                    {genSettings?.show && (
+                        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={()=>setGenSettings(null)}>
+                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-slate-800 mb-6">{TEXT.genSettings}</h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">{TEXT.totalStaff}</label>
+                                        <input type="number" value={genSettings.total} onChange={e=>setGenSettings({...genSettings, total: parseInt(e.target.value)})} 
+                                            className="w-full border border-slate-300 rounded-lg p-3 text-lg font-semibold text-center" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">{TEXT.morningStaff}</label>
+                                        <input type="number" value={genSettings.morning} onChange={e=>setGenSettings({...genSettings, morning: parseInt(e.target.value)})}
+                                            className="w-full border border-slate-300 rounded-lg p-3 text-lg font-semibold text-center" />
+                                    </div>
+                                </div>
+                                <div className="flex gap-3 mt-8">
+                                    <button onClick={()=>setGenSettings(null)} className="flex-1 py-3 text-slate-600 font-medium hover:bg-slate-100 rounded-xl">{TEXT.cancel}</button>
+                                    <button onClick={runGenerator} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition">{TEXT.generate}</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ARCHIVE CONFIRM MODAL */}
                     {personToRemove && (
-                         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4 no-print" onClick={() => setPersonToRemove(null)}>
-                            <div className="bg-white rounded p-6 w-full max-w-sm shadow-xl" onClick={e => e.stopPropagation()}>
-                                <h3 className="font-bold text-lg mb-2">{TEXT.confirmDeleteTitle}</h3>
-                                <p className="mb-4">{TEXT.confirmDeleteText} <span className="font-bold">{getPersonName(personToRemove)}</span>?</p>
-                                <div className="flex justify-end gap-3">
-                                    <button onClick={() => setPersonToRemove(null)} className="bg-gray-200 px-4 py-2 rounded font-medium hover:bg-gray-300">
-                                        {TEXT.btnCancel}
-                                    </button>
-                                    <button onClick={confirmRemovePerson} className="bg-red-600 text-white px-4 py-2 rounded font-medium hover:bg-red-700">
-                                        {TEXT.btnDelete}
-                                    </button>
+                        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={()=>setPersonToRemove(null)}>
+                            <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl text-center" onClick={e=>e.stopPropagation()}>
+                                <h3 className="font-bold text-lg text-slate-800 mb-2">{TEXT.deleteConfirm}</h3>
+                                <p className="text-slate-500 text-sm mb-6">{TEXT.deleteSub}</p>
+                                <div className="flex gap-3">
+                                    <button onClick={()=>setPersonToRemove(null)} className="flex-1 bg-slate-100 text-slate-700 py-2 rounded-lg font-medium">{TEXT.cancel}</button>
+                                    <button onClick={archivePerson} className="flex-1 bg-red-600 text-white py-2 rounded-lg font-medium hover:bg-red-700">{TEXT.archive}</button>
                                 </div>
                             </div>
                         </div>
                     )}
+                </div>
+            );
+        }
 
-                </main>
-            </div>
-        );
-    }
+        function AuthScreen() {
+            const [isReg, setIsReg] = useState(false);
+            const [email, setEmail] = useState('');
+            const [pass, setPass] = useState('');
+            const [err, setErr] = useState('');
+            const [busy, setBusy] = useState(false);
 
-    function AuthScreen() {
-        const [isReg, setIsReg] = useState(false);
-        const [email, setEmail] = useState('');
-        const [pass, setPass] = useState('');
-        const [err, setErr] = useState('');
-        const [busy, setBusy] = useState(false);
+            const handle = async (e) => {
+                e.preventDefault();
+                setBusy(true); setErr('');
+                try {
+                    if(isReg) await auth.createUserWithEmailAndPassword(email, pass);
+                    else await auth.signInWithEmailAndPassword(email, pass);
+                } catch(e) {
+                    console.error(e);
+                    setErr(TEXT.errorAuth);
+                    setBusy(false);
+                }
+            };
 
-        const handle = async (e) => {
-            e.preventDefault();
-            setBusy(true); setErr('');
-            try {
-                if(isReg) await auth.createUserWithEmailAndPassword(email, pass);
-                else await auth.signInWithEmailAndPassword(email, pass);
-            } catch(e) {
-                console.error(e);
-                setErr(TEXT.errorAuth);
-                setBusy(false);
-            }
-        };
-
-        return (
-            <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
-                <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200">
-                    <div className="text-center mb-8">
-                        <h1 className="text-2xl font-bold text-slate-800">KUTER</h1>
-                        <p className="text-slate-500">{TEXT.loginTitle}</p>
-                    </div>
-                    <form onSubmit={handle} className="space-y-4">
-                        <input type="email" required placeholder={TEXT.emailLabel} className="w-full p-3 border border-slate-300 rounded-lg" value={email} onChange={e=>setEmail(e.target.value)} />
-                        <input type="password" required placeholder={TEXT.passLabel} className="w-full p-3 border border-slate-300 rounded-lg" value={pass} onChange={e=>setPass(e.target.value)} />
-                        {err && <div className="text-red-500 text-sm">{err}</div>}
-                        <button disabled={busy} className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900 transition">
-                            {busy ? '...' : isReg ? TEXT.btnRegister : TEXT.btnLogin}
-                        </button>
-                    </form>
-                    <div className="mt-6 text-center">
-                        <button onClick={()=>setIsReg(!isReg)} className="text-sm text-blue-600 font-medium hover:underline">
-                            {isReg ? "Masz konto? Zaloguj" : "Nie masz konta? Rejestracja"}
-                        </button>
+            return (
+                <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
+                    <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200">
+                        <div className="text-center mb-8">
+                            <h1 className="text-2xl font-bold text-slate-800">KUTER</h1>
+                            <p className="text-slate-500">{TEXT.loginTitle}</p>
+                        </div>
+                        <form onSubmit={handle} className="space-y-4">
+                            <input type="email" required placeholder={TEXT.emailLabel} className="w-full p-3 border border-slate-300 rounded-lg" value={email} onChange={e=>setEmail(e.target.value)} />
+                            <input type="password" required placeholder={TEXT.passLabel} className="w-full p-3 border border-slate-300 rounded-lg" value={pass} onChange={e=>setPass(e.target.value)} />
+                            {err && <div className="text-red-500 text-sm">{err}</div>}
+                            <button disabled={busy} className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900 transition">
+                                {busy ? '...' : isReg ? TEXT.btnRegister : TEXT.btnLogin}
+                            </button>
+                        </form>
+                        <div className="mt-6 text-center">
+                            <button onClick={()=>setIsReg(!isReg)} className="text-sm text-blue-600 font-medium hover:underline">
+                                {isReg ? "Masz konto? Zaloguj" : "Nie masz konta? Rejestracja"}
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        )
-    }
+            )
+        }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
