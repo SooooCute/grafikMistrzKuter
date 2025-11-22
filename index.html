@@ -867,7 +867,7 @@
                         )}
                     </main>
 
-                    {/* MODALS */}
+                    {/* SMART ADDING MODAL */}
                     {addingToSlot && (
                         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={()=>setAddingToSlot(null)}>
                             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]" onClick={e=>e.stopPropagation()}>
@@ -888,13 +888,13 @@
                                         if (addingToSlot.type === 'bar' || addingToSlot.type === 'evening') addedHours = 12;
                                         return (
                                             <button key={p.id} disabled={isDayOff}
-                                                onClick={()=>{
+                                                onClick={async ()=>{
                                                     const ns = {...(schedule[addingToSlot.date] || {barman:[], morning:[], evening:[]})};
                                                     if(addingToSlot.type === 'bar') {
                                                         const prev = getBarmanArray(ns);
                                                         ns.barman = [...prev, p.id];
                                                     } else ns[addingToSlot.type] = [...ns[addingToSlot.type], p.id];
-                                                    db.doc(`${getUserRef()}/appData/schedule`).set({[addingToSlot.date]: ns}, {merge:true});
+                                                    await db.doc(`${getUserRef()}/appData/schedule`).set({[addingToSlot.date]: ns}, {merge:true});
                                                     setAddingToSlot(null);
                                                 }} 
                                                 className={`w-full text-left px-4 py-3 mb-2 rounded-lg border flex justify-between items-center transition ${isDayOff ? 'bg-red-50 border-red-100 opacity-60 cursor-not-allowed' : 'bg-white border-slate-100 hover:border-blue-300 hover:shadow-md'}`}>
