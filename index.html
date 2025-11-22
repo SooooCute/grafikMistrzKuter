@@ -36,7 +36,7 @@
                 background: white; 
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact;
-                zoom: 0.65; /* Scale down to fit A4 */
+                zoom: 0.60; /* Scale down to fit A4 perfectly */
             }
             .no-print { display: none !important; }
             .print-show { display: block !important; }
@@ -59,7 +59,8 @@
             .bg-indigo-50\/30, .bg-orange-50\/30, .bg-blue-50\/30 { background-color: transparent !important; }
             
             /* Badges becomes simple text boxes */
-            .rounded { border-radius: 0 !important; }
+            .rounded { border-radius: 0 !important; border: none !important; }
+            .text-xs { font-size: 11px !important; }
         }
         .print-show { display: none; }
         
