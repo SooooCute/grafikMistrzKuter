@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUTER - System Grafik v9.2</title>
+    <title>KUTER - System Grafik v9.3</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,37 +47,60 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; -webkit-tap-highlight-color: transparent; }
         
-        /* --- PRINT STYLES (A4 LANDSCAPE FIXED) --- */
+        /* --- PRINT STYLES (FIXED) --- */
         @media print {
-            @page { size: A4 landscape; margin: 5mm; }
+            @page { size: landscape; margin: 5mm; }
+            
             body { 
-                background: white !important; 
+                background-color: white !important; 
                 color: black !important; 
-                zoom: 0.55; /* Aggressive scaling to fit everything */
+                zoom: 0.50; /* Еще меньше масштаб, чтобы точно влезло */
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact;
             }
-            .no-print { display: none !important; }
+
+            /* Hide unwanted elements */
+            .no-print, header, nav, .fixed, button { display: none !important; }
             .print-show { display: block !important; }
             
-            /* Hide Scrollbars */
-            ::-webkit-scrollbar { display: none; }
-            body, #root, main { height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; }
+            /* Reset Layout for Print */
+            #root, .flex-col, main, .flex-grow { 
+                display: block !important; 
+                height: auto !important; 
+                width: 100% !important;
+                overflow: visible !important; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+            }
             
             /* Table Fixes */
-            table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 20px; }
-            th, td { border: 1px solid #000 !important; padding: 2px !important; color: black !important; page-break-inside: avoid; }
+            .overflow-x-auto { overflow: visible !important; }
+            table { 
+                width: 100% !important; 
+                min-width: 0 !important;
+                border-collapse: collapse; 
+                font-size: 9px; /* Мелкий шрифт для печати */
+            }
+            th, td { 
+                border: 1px solid #333 !important; 
+                padding: 2px !important; 
+                color: black !important; 
+                page-break-inside: avoid; 
+            }
             
             /* Header */
-            h1 { font-size: 18px; color: black; margin: 0 0 10px 0; text-align: center; text-transform: uppercase; }
+            h1 { font-size: 24px; color: black; margin: 0 0 10px 0; text-align: center; text-transform: uppercase; }
             
-            /* Badges to Text */
+            /* Clean colors */
             .bg-surface, .bg-bg { background: white !important; color: black !important; }
-            .rounded { border-radius: 0 !important; border: none !important; }
+            .rounded, .rounded-xl, .rounded-md { border-radius: 0 !important; border: none !important; }
+            
+            /* Remove background colors from cells to save ink, keep text */
+            .bg-indigo-50\/30, .bg-orange-50\/30, .bg-blue-50\/30 { background: transparent !important; }
             
             /* Stats Block in Print */
-            .print-stats { display: flex !important; flex-wrap: wrap; gap: 10px; font-size: 10px; border-top: 2px solid #000; padding-top: 10px; }
-            .print-stat-item { width: 140px; border: 1px solid #ccc; padding: 4px; }
+            .print-stats { display: flex !important; flex-wrap: wrap; gap: 10px; font-size: 10px; border-top: 2px solid #000; padding-top: 10px; margin-top: 10px; }
+            .print-stat-item { width: 120px; border: 1px solid #ccc; padding: 2px 4px; }
         }
         .print-show, .print-stats { display: none; }
         
@@ -102,7 +125,7 @@
             errDiv.innerHTML = '<h3 style="margin-top:0">CRITICAL ERROR</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("--- KUTER SYSTEM v9.2 LOADED ---");
+        console.log("--- KUTER SYSTEM v9.3 LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -132,7 +155,7 @@
         // --- TEXTS ---
         const TEXT = {
             defaultAppName: "KUTER",
-            appSub: "System v9.2",
+            appSub: "System v9.3",
             tabStaff: "Zespół",
             tabCalendar: "Grafik",
             tabStats: "Raporty",
@@ -173,7 +196,6 @@
             errorAuth: "Błąd danych.",
             copySuccess: "Skopiowano!",
             optimizing: "Przeliczanie...",
-            // Reservations
             resAddBtn: "+ Nowa Rezerwacja",
             resGridBtn: "📅 Kalendarz",
             resAddTitle: "Dodaj / Edytuj Rezerwację",
@@ -182,7 +204,7 @@
             resPax: "Os",
             resTables: "Stolik",
             resDeposit: "Zadatek",
-            resTakenBy: "Przyjął", // NEW
+            resTakenBy: "Przyjął",
             resDate: "Data",
             resNoData: "Brak rezerwacji na ten dzień.",
             resTotalDeposit: "Suma:",
@@ -239,22 +261,20 @@
             const [addingToSlot, setAddingToSlot] = useState(null);
             const [personToRemove, setPersonToRemove] = useState(null);
             const [showSettings, setShowSettings] = useState(false); 
-            const [showAddStaff, setShowAddStaff] = useState(false); // New Modal for Staff
+            const [showAddStaff, setShowAddStaff] = useState(false); 
             const [settingsTab, setSettingsTab] = useState('gen');
             
             const [genTotal, setGenTotal] = useState(4);
             const [genMorning, setGenMorning] = useState(2);
             const [isOptimizing, setIsOptimizing] = useState(false);
 
-            // Res State
-            const [showResGrid, setShowResGrid] = useState(false); // Toggle Grid
-            const [showResForm, setShowResForm] = useState(false); // Toggle Form
+            const [showResGrid, setShowResGrid] = useState(false);
+            const [showResForm, setShowResForm] = useState(false);
             const [editingResId, setEditingResId] = useState(null);
-            const [resSelectedDate, setResSelectedDate] = useState(new Date()); // Selected date for Res List
+            const [resSelectedDate, setResSelectedDate] = useState(new Date());
             const [newResData, setNewResData] = useState({ name: '', time: '12:00', pax: 2, tables: '', deposit: 0, takenBy: '', status: 'pending' });
             const [confirmClean, setConfirmClean] = useState(false);
 
-            // Auth & Data
             useEffect(() => { const u = auth.onAuthStateChanged(u => { setUser(u); setIsAuthReady(true); if(!u){setPeople([]);setSchedule({});setReservations({})} }); return () => u(); }, []);
             useEffect(() => {
                 if(!user || !db) return;
@@ -267,7 +287,6 @@
                 return () => { u1(); u2(); u3(); u4(); };
             }, [user]);
 
-            // Helpers
             const getPerson = (id) => people.find(p => p.id === id);
             const getUserRef = () => `artifacts/${firebaseConfig.projectId}/users/${user.uid}`;
             const getMonthName = (d) => d.toLocaleString('pl-PL', { month: 'long', year: 'numeric' });
@@ -275,7 +294,6 @@
             const getBarmanArray = (s) => (!s || !s.barman) ? [] : (Array.isArray(s.barman) ? s.barman : [s.barman]);
             const saveTitle = (val) => { setAppTitle(val); localStorage.setItem('appTitle', val); };
 
-            // Stats
             const stats = useMemo(() => {
                 const s = {}; people.forEach(p => s[p.id] = { h: 0, covers: 0 });
                 const dim = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate();
@@ -308,7 +326,6 @@
                 return st;
             };
 
-            // Actions
             const addPerson = async () => { if(!newName.trim())return; await db.collection(`${getUserRef()}/people`).add({name:newName.trim(), gender:newGender, role:newRole, daysOff:[], archived:false}); setNewName(''); setShowAddStaff(false); };
             const archivePerson = async () => { if(personToRemove) { await db.doc(`${getUserRef()}/people/${personToRemove}`).update({archived:true}); setPersonToRemove(null); }};
             const cleanArchive = async () => {
@@ -324,7 +341,10 @@
                 const no = p.daysOff.includes(dStr) ? p.daysOff.filter(d=>d!==dStr) : [...p.daysOff, dStr];
                 await db.doc(`${getUserRef()}/people/${pid}`).update({daysOff:no});
             };
-            const toggleHoliday = async (ds) => { const nh = holidays.includes(ds)?holidays.filter(d=>d!==ds):[...holidays, ds]; await db.doc(`${getUserRef()}/appData/holidays`).set({dates:nh}); };
+            const toggleHoliday = async (ds) => { 
+                const nh = holidays.includes(ds) ? holidays.filter(d=>d!==ds) : [...holidays, ds]; 
+                await db.doc(`${getUserRef()}/appData/holidays`).set({dates:nh}); 
+            };
             const removeFromShift = async (ds, t, pid) => {
                 const s = schedule[ds]; if(!s)return; const ns={...s};
                 if(t==='bar'){ const b=getBarmanArray(s); ns.barman=b.filter(x=>x!==pid); } else ns[t]=s[t].filter(x=>x!==pid);
@@ -336,7 +356,6 @@
                 await db.doc(`${getUserRef()}/appData/schedule`).set({[ds]:ns}, {merge:true}); setAddingToSlot(null);
             };
             
-            // Reservations
             const saveReservation = async () => {
                 if (!newResData.name) return;
                 const ds = resSelectedDate.toLocaleDateString('en-CA');
@@ -347,17 +366,14 @@
                 await db.doc(`${getUserRef()}/appData/reservations`).set({ ...reservations, [ds]: uList }, { merge: true });
                 setEditingResId(null); setNewResData({ name: '', time: '12:00', pax: 2, tables: '', deposit: 0, takenBy: '', status: 'pending' }); setShowResForm(false);
             };
-
             const openResForm = (res = null) => {
                 if (res) { setEditingResId(res.id); setNewResData({ ...res }); }
                 else { setEditingResId(null); setNewResData({ name: '', time: '12:00', pax: 2, tables: '', deposit: 0, takenBy: '', status: 'pending' }); }
                 setShowResForm(true);
             };
-
             const removeReservation = async (ds, rid) => { const list = reservations[ds]||[]; await db.doc(`${getUserRef()}/appData/reservations`).update({ [ds]: list.filter(r => r.id !== rid) }); };
             const toggleResStatus = async (ds, rid) => { const list = reservations[ds]||[]; const uList = list.map(r => r.id === rid ? { ...r, status: r.status === 'pending' ? 'done' : r.status === 'done' ? 'cancelled' : 'pending' } : r); await db.doc(`${getUserRef()}/appData/reservations`).update({ [ds]: uList }); };
 
-            // Generator
             const generateScheduleData = (pl, y, m, tot, morn) => {
                 try {
                     const dc = new Date(y, m + 1, 0).getDate();
@@ -491,9 +507,10 @@
                                                                 </div>
                                                                 <div className="flex flex-wrap gap-1 no-print">
                                                                     {Array.from({length: new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate()}, (_, i)=>i+1).map(d => {
-                                                                        const dStr = new Date(currentDate.getFullYear(), currentDate.getMonth(), d).toLocaleDateString('en-CA');
+                                                                        const dObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), d);
+                                                                        const dStr = dObj.toLocaleDateString('en-CA');
                                                                         const isOff = p.daysOff.includes(dStr);
-                                                                        const isWknd = [0, 5, 6].includes(new Date(currentDate.getFullYear(), currentDate.getMonth(), d).getDay());
+                                                                        const isWknd = [0, 5, 6].includes(dObj.getDay());
                                                                         let btnClass = "bg-surface2 text-muted hover:bg-accent hover:text-white";
                                                                         if (isWknd) btnClass = "bg-weekend text-slate-300 hover:bg-accent hover:text-white";
                                                                         if (isOff) btnClass = "bg-red-500/20 text-red-400 border border-red-500/50";
@@ -533,22 +550,27 @@
                                             </thead>
                                             <tbody className="text-sm divide-y divide-surface2">
                                                 {Array.from({length: new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate()}, (_, i)=>i+1).map(d => {
-                                                    const dStr = new Date(currentDate.getFullYear(), currentDate.getMonth(), d).toLocaleDateString('en-CA');
+                                                    const dObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), d);
+                                                    const dStr = dObj.toLocaleDateString('en-CA');
                                                     const isHol = holidays.includes(dStr);
+                                                    const isWknd = [0, 6].includes(dObj.getDay());
                                                     const s = schedule[dStr] || { barman: [], morning: [], evening: [] };
-                                                    const rowClass = isHol ? 'bg-red-900/10' : [0, 6].includes(new Date(currentDate.getFullYear(), currentDate.getMonth(), d).getDay()) ? 'bg-bg/30' : '';
+                                                    const rowClass = isHol ? 'bg-red-900/10' : isWknd ? 'bg-bg/30' : '';
                                                     const Badge = ({uid, type, onDelete}) => {
                                                         const p = getPerson(uid); if(!p)return null;
                                                         const st = getStreak(uid, dStr);
                                                         const isCover = type === 'bar' && p.role === 'waiter';
-                                                        let cls = type==='bar' ? (isCover ? "bg-yellow-900/30 text-yellow-200 border-yellow-700" : "bg-indigo-900/30 text-indigo-200 border-indigo-700") : (type==='morn' ? "bg-orange-900/30 text-orange-200 border-orange-700" : "bg-blue-900/30 text-blue-200 border-blue-700");
+                                                        let cls = "";
+                                                        if(type==='bar') cls = isCover ? "bg-yellow-900/30 text-yellow-200 border-yellow-700" : "bg-indigo-900/30 text-indigo-200 border-indigo-700";
+                                                        else if(type==='morn') cls = "bg-orange-900/30 text-orange-200 border-orange-700";
+                                                        else cls = "bg-blue-900/30 text-blue-200 border-blue-700";
                                                         return <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs border mr-1 mb-1 ${cls}`}>{p.name} {isCover && '⚠️'} {st>=4 && '🔥'}<button onClick={onDelete} className="ml-1.5 opacity-50 hover:opacity-100 hover:text-red-400 no-print">×</button></span>
                                                     }
                                                     return (
                                                         <tr key={d} className={`group hover:bg-surface2/10 transition ${rowClass}`}>
                                                             <td className="p-3 align-top border-r border-surface2 relative">
                                                                 <div className="font-bold text-lg text-white leading-none">{d}</div>
-                                                                <div className="text-[10px] text-muted uppercase mt-1">{new Date(currentDate.getFullYear(), currentDate.getMonth(), d).toLocaleDateString('pl-PL', {weekday:'short'})}</div>
+                                                                <div className="text-[10px] text-muted uppercase mt-1">{dObj.toLocaleDateString('pl-PL', {weekday:'short'})}</div>
                                                                 <button onClick={()=>toggleHoliday(dStr)} className={`absolute top-2 right-1 text-sm no-print ${isHol?'text-yellow-500':'text-surface2 hover:text-yellow-500'}`}>★</button>
                                                             </td>
                                                             {['bar', 'morning', 'evening'].map(t => (
