@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUTER - System Grafik v9.4</title>
+    <title>KUTER - System Grafik v9.5</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,69 +47,75 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; -webkit-tap-highlight-color: transparent; }
         
-        /* --- PRINT STYLES (EXCEL/GOOGLE SHEETS STYLE) --- */
+        /* --- PRINT STYLES (PORTRAIT OPTIMIZED) --- */
         @media print {
             @page { 
-                size: landscape; 
-                margin: 10mm; 
+                size: A4 portrait;   /* ИЗМЕНЕНО НА PORTRAIT */
+                margin: 5mm; 
             }
             
-            /* Reset ALL colors and backgrounds to simple Black on White */
+            /* Reset ALL colors to Black/White */
             * {
                 background-color: white !important;
                 color: black !important;
                 border-color: black !important;
                 box-shadow: none !important;
                 text-shadow: none !important;
-                /* Убираем скругления для строгого вида */
                 border-radius: 0 !important; 
             }
 
-            /* Hide UI elements */
+            /* Hide UI */
             .no-print, header, nav, .fixed, button, .print-hide { display: none !important; }
             .print-show { display: block !important; }
             
-            /* Main Container */
+            /* Layout Reset */
             body, #root, main { 
                 width: 100% !important; 
                 margin: 0 !important; 
                 padding: 0 !important; 
-                font-family: Arial, Helvetica, sans-serif !important; /* Excel-like font */
+                font-family: Arial, sans-serif !important;
                 font-size: 10pt !important;
+                zoom: 0.52; /* Масштаб подобран под ширину A4 в портрете */
             }
 
-            /* Table Reset */
             .overflow-x-auto { overflow: visible !important; }
+            
+            /* Table Styling - Explicit Grid */
             table { 
                 width: 100% !important; 
                 border-collapse: collapse !important; 
-                border: 1px solid #000 !important;
-                margin-top: 10px;
+                border: 2px solid #000 !important; /* Thick outer border */
+                margin-top: 5px;
+                table-layout: fixed; /* Fix column widths */
             }
             
             /* Header Cells */
             thead th {
-                background-color: #f0f0f0 !important; /* Light gray header like Excel */
+                background-color: #e0e0e0 !important;
                 font-weight: bold !important;
                 border: 1px solid #000 !important;
-                padding: 4px 8px !important;
+                padding: 4px !important;
                 text-transform: uppercase;
                 font-size: 9pt !important;
+                text-align: center !important;
             }
 
-            /* Body Cells */
+            /* Column Widths for Portrait */
+            th:nth-child(1) { width: 8%; }  /* Data */
+            th:nth-child(2) { width: 22%; } /* Bar */
+            th:nth-child(3) { width: 35%; } /* Rano */
+            th:nth-child(4) { width: 35%; } /* Popoludnie */
+
+            /* Body Cells - Horizontal Lines */
             tbody td {
-                border: 1px solid #000 !important;
-                padding: 4px 8px !important;
-                vertical-align: top !important;
+                border: 1px solid #000 !important; /* GRID LINES */
+                padding: 3px 5px !important;
+                vertical-align: middle !important;
+                word-wrap: break-word; /* Wrap long names if needed */
             }
 
-            /* Remove flex layouts inside cells to look like text */
-            td div.flex {
-                display: block !important;
-            }
-
-            /* Badges transform to simple text */
+            /* Content formatting */
+            td div.flex { display: block !important; }
             span.inline-flex {
                 display: inline !important;
                 border: none !important;
@@ -117,35 +123,31 @@
                 margin: 0 !important;
                 font-weight: normal !important;
             }
-            /* Add comma after names (pseudo-element trick doesn't work well on React spans, so we rely on visual flow) */
-            span.inline-flex::after {
-                content: ", ";
-            }
-            span.inline-flex:last-child::after {
-                content: "";
-            }
+            /* Comma separation */
+            span.inline-flex::after { content: ", "; }
+            span.inline-flex:last-child::after { content: ""; }
 
-            /* Header Title */
+            /* Header */
             h1 { 
-                font-size: 18pt !important; 
+                font-size: 16pt !important; 
                 font-weight: bold !important; 
-                text-align: left !important; 
+                text-align: center !important; 
                 margin-bottom: 5mm !important;
                 border-bottom: 2px solid black;
                 padding-bottom: 2mm;
             }
 
-            /* Stats Footer */
+            /* Footer Stats */
             .print-stats { 
                 display: grid !important; 
-                grid-template-columns: repeat(6, 1fr); 
+                grid-template-columns: repeat(4, 1fr); /* 4 columns for portrait width */
                 gap: 5px; 
                 margin-top: 15px; 
-                border-top: 1px solid #000; 
+                border-top: 2px solid #000; 
                 padding-top: 10px; 
                 page-break-inside: avoid;
             }
-            .print-stat-item { font-size: 9pt; }
+            .print-stat-item { font-size: 9pt; border: 1px solid #ccc; padding: 2px 4px; }
         }
         .print-show, .print-stats { display: none; }
         
@@ -171,7 +173,7 @@
             errDiv.innerHTML = '<h3 style="margin-top:0">CRITICAL ERROR</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("--- KUTER SYSTEM v9.4 LOADED ---");
+        console.log("--- KUTER SYSTEM v9.5 LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -201,7 +203,7 @@
         // --- TEXTS ---
         const TEXT = {
             defaultAppName: "KUTER",
-            appSub: "System v9.4",
+            appSub: "System v9.5",
             tabStaff: "Zespół",
             tabCalendar: "Grafik",
             tabStats: "Raporty",
