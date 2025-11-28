@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUTER - System Grafik v9.3</title>
+    <title>KUTER - System Grafik v9.4</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,60 +47,105 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; -webkit-tap-highlight-color: transparent; }
         
-        /* --- PRINT STYLES (FIXED) --- */
+        /* --- PRINT STYLES (EXCEL/GOOGLE SHEETS STYLE) --- */
         @media print {
-            @page { size: landscape; margin: 5mm; }
+            @page { 
+                size: landscape; 
+                margin: 10mm; 
+            }
             
-            body { 
-                background-color: white !important; 
-                color: black !important; 
-                zoom: 0.50; /* Еще меньше масштаб, чтобы точно влезло */
-                -webkit-print-color-adjust: exact; 
-                print-color-adjust: exact;
+            /* Reset ALL colors and backgrounds to simple Black on White */
+            * {
+                background-color: white !important;
+                color: black !important;
+                border-color: black !important;
+                box-shadow: none !important;
+                text-shadow: none !important;
+                /* Убираем скругления для строгого вида */
+                border-radius: 0 !important; 
             }
 
-            /* Hide unwanted elements */
-            .no-print, header, nav, .fixed, button { display: none !important; }
+            /* Hide UI elements */
+            .no-print, header, nav, .fixed, button, .print-hide { display: none !important; }
             .print-show { display: block !important; }
             
-            /* Reset Layout for Print */
-            #root, .flex-col, main, .flex-grow { 
-                display: block !important; 
-                height: auto !important; 
-                width: 100% !important;
-                overflow: visible !important; 
+            /* Main Container */
+            body, #root, main { 
+                width: 100% !important; 
                 margin: 0 !important; 
                 padding: 0 !important; 
+                font-family: Arial, Helvetica, sans-serif !important; /* Excel-like font */
+                font-size: 10pt !important;
             }
-            
-            /* Table Fixes */
+
+            /* Table Reset */
             .overflow-x-auto { overflow: visible !important; }
             table { 
                 width: 100% !important; 
-                min-width: 0 !important;
-                border-collapse: collapse; 
-                font-size: 9px; /* Мелкий шрифт для печати */
-            }
-            th, td { 
-                border: 1px solid #333 !important; 
-                padding: 2px !important; 
-                color: black !important; 
-                page-break-inside: avoid; 
+                border-collapse: collapse !important; 
+                border: 1px solid #000 !important;
+                margin-top: 10px;
             }
             
-            /* Header */
-            h1 { font-size: 24px; color: black; margin: 0 0 10px 0; text-align: center; text-transform: uppercase; }
-            
-            /* Clean colors */
-            .bg-surface, .bg-bg { background: white !important; color: black !important; }
-            .rounded, .rounded-xl, .rounded-md { border-radius: 0 !important; border: none !important; }
-            
-            /* Remove background colors from cells to save ink, keep text */
-            .bg-indigo-50\/30, .bg-orange-50\/30, .bg-blue-50\/30 { background: transparent !important; }
-            
-            /* Stats Block in Print */
-            .print-stats { display: flex !important; flex-wrap: wrap; gap: 10px; font-size: 10px; border-top: 2px solid #000; padding-top: 10px; margin-top: 10px; }
-            .print-stat-item { width: 120px; border: 1px solid #ccc; padding: 2px 4px; }
+            /* Header Cells */
+            thead th {
+                background-color: #f0f0f0 !important; /* Light gray header like Excel */
+                font-weight: bold !important;
+                border: 1px solid #000 !important;
+                padding: 4px 8px !important;
+                text-transform: uppercase;
+                font-size: 9pt !important;
+            }
+
+            /* Body Cells */
+            tbody td {
+                border: 1px solid #000 !important;
+                padding: 4px 8px !important;
+                vertical-align: top !important;
+            }
+
+            /* Remove flex layouts inside cells to look like text */
+            td div.flex {
+                display: block !important;
+            }
+
+            /* Badges transform to simple text */
+            span.inline-flex {
+                display: inline !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                font-weight: normal !important;
+            }
+            /* Add comma after names (pseudo-element trick doesn't work well on React spans, so we rely on visual flow) */
+            span.inline-flex::after {
+                content: ", ";
+            }
+            span.inline-flex:last-child::after {
+                content: "";
+            }
+
+            /* Header Title */
+            h1 { 
+                font-size: 18pt !important; 
+                font-weight: bold !important; 
+                text-align: left !important; 
+                margin-bottom: 5mm !important;
+                border-bottom: 2px solid black;
+                padding-bottom: 2mm;
+            }
+
+            /* Stats Footer */
+            .print-stats { 
+                display: grid !important; 
+                grid-template-columns: repeat(6, 1fr); 
+                gap: 5px; 
+                margin-top: 15px; 
+                border-top: 1px solid #000; 
+                padding-top: 10px; 
+                page-break-inside: avoid;
+            }
+            .print-stat-item { font-size: 9pt; }
         }
         .print-show, .print-stats { display: none; }
         
@@ -118,6 +163,7 @@
 <body>
     <div id="root"></div>
 
+    <!-- Error Handler -->
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             const errDiv = document.createElement('div');
@@ -125,7 +171,7 @@
             errDiv.innerHTML = '<h3 style="margin-top:0">CRITICAL ERROR</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("--- KUTER SYSTEM v9.3 LOADED ---");
+        console.log("--- KUTER SYSTEM v9.4 LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -155,7 +201,7 @@
         // --- TEXTS ---
         const TEXT = {
             defaultAppName: "KUTER",
-            appSub: "System v9.3",
+            appSub: "System v9.4",
             tabStaff: "Zespół",
             tabCalendar: "Grafik",
             tabStats: "Raporty",
@@ -381,9 +427,9 @@
                     const newSched = {};
                     const getScore = (p, r) => { let s = p.hours; if(p.streak >= 4) s += 1000; if(r==='bartender' && p.role==='waiter') s += (p.barCount * 50); return s + Math.random() * 10; };
 
-                    for(let d = 1; d <= dc; d++) {
-                        const dStr = new Date(y, m, d).toLocaleDateString('en-CA');
-                        const dw = new Date(y, m, d).getDay();
+                    for(let day = 1; day <= dc; day++) {
+                        const dStr = new Date(y, m, day).toLocaleDateString('en-CA');
+                        const dw = new Date(y, m, day).getDay();
                         const avail = pool.filter(p => !p.daysOff.includes(dStr));
                         let sb = []; let rb = avail.filter(p => p.role === 'bartender').sort((a,b) => getScore(a,'bartender') - getScore(b,'bartender'));
                         const isWk = (dw === 5 || dw === 6 || dw === 0); const nb = isWk ? 2 : 1;
@@ -916,7 +962,7 @@
                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
                         <div className="text-center mb-8">
                             <h1 className="text-3xl font-bold tracking-tighter mb-1">KUTER</h1>
-                            <p className="text-muted text-sm uppercase tracking-widest">System v9.2</p>
+                            <p className="text-muted text-sm uppercase tracking-widest">System v9.4</p>
                         </div>
                         <form onSubmit={handle} className="space-y-4">
                             <div>
