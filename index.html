@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUTER - System Grafik v9.0</title>
+    <title>KUTER - System Grafik v9.1</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,14 +13,13 @@
             theme: {
                 extend: {
                     colors: {
-                        // Наша новая палитра "Onyx"
                         bg: '#0f172a',      // Slate 900
                         surface: '#1e293b', // Slate 800
                         surface2: '#334155', // Slate 700
                         accent: '#3b82f6',  // Blue 500
                         text: '#e2e8f0',    // Slate 200
                         muted: '#94a3b8',   // Slate 400
-                        weekend: '#334155', // Цвет для пт-сб-вс
+                        weekend: '#475569', // Lighter slate for weekends
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -48,12 +47,7 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; -webkit-tap-highlight-color: transparent; }
         
-        /* Анимации переходов */
-        .fade-enter { opacity: 0; transform: scale(0.98); }
-        .fade-enter-active { opacity: 1; transform: scale(1); transition: opacity 300ms, transform 300ms; }
-        .slide-menu { transition: transform 0.3s ease-in-out; }
-        
-        /* --- STYLES FOR PRINT (A4 OPTIMIZED) --- */
+        /* Print Styles */
         @media print {
             @page { size: A4 landscape; margin: 5mm; }
             body { background: white !important; color: black !important; zoom: 0.65; }
@@ -63,9 +57,7 @@
             body, #root, main { height: auto !important; overflow: visible !important; }
             table { width: 100%; border-collapse: collapse; font-size: 11px; }
             th, td { border: 1px solid #000 !important; padding: 3px !important; color: black !important; }
-            /* Reset dark mode colors for print */
             .bg-surface, .bg-bg { background: white !important; color: black !important; }
-            /* Badges */
             .badge { border: 1px solid #000; color: black !important; background: white !important; }
         }
         .print-show { display: none; }
@@ -84,7 +76,6 @@
 <body>
     <div id="root"></div>
 
-    <!-- Error Handler -->
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             const errDiv = document.createElement('div');
@@ -92,7 +83,7 @@
             errDiv.innerHTML = '<h3 style="margin-top:0">CRITICAL ERROR</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("--- KUTER SYSTEM v9.0 ONYX LOADED ---");
+        console.log("--- KUTER SYSTEM v9.1 LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -123,9 +114,8 @@
 
         // --- TEXTS ---
         const TEXT = {
-            appName: "KUTER",
-            appSub: "System v9.0",
-            menu: "Menu",
+            defaultAppName: "KUTER",
+            appSub: "System v9.1",
             tabStaff: "Zespół",
             tabCalendar: "Grafik",
             tabStats: "Raporty",
@@ -149,29 +139,36 @@
             emailLabel: "Email",
             passLabel: "Hasło",
             archive: "Archiwum",
-            genSettings: "Generator",
+            settingsTitle: "Ustawienia",
+            settGen: "Generator",
+            settSys: "System",
             totalStaff: "Łącznie:",
             morningStaff: "Rano:",
             cancel: "Anuluj",
+            save: "Zapisz",
             generate: "Start",
             deleteConfirm: "Archiwizacja",
             deleteSub: "Przenieść do archiwum?",
+            cleanConfirm: "Wyczyścić Archiwum?",
+            cleanSub: "To usunie trwale wszystkich archiwalnych pracowników. Nieodwracalne.",
+            cleanBtn: "Usuń Trwale",
+            headerName: "Nazwa Lokalu (Nagłówek)",
             errorAuth: "Błąd danych.",
             copySuccess: "Skopiowano!",
             optimizing: "Przeliczanie...",
             resAdd: "Dodaj",
+            resUpdate: "Zapisz Zmiany",
             resName: "Nazwisko",
             resTime: "Godz",
             resPax: "Os",
             resTables: "Stolik",
             resDeposit: "Zadatek",
-            resDate: "Data",
             resNoData: "Brak rezerwacji",
             resTotalDeposit: "Suma:",
             resStatus: "Status"
         };
 
-        // --- ICONS (Minimalist SVG) ---
+        // --- ICONS ---
         const Icons = {
             Menu: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>,
             Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>,
@@ -180,6 +177,7 @@
             Chart: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
             Book: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>,
             Logout: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>,
+            Settings: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
         }
 
         // --- CLOCK ---
@@ -210,7 +208,8 @@
             const [activeTab, setActiveTab] = useState('staff');
             const [currentDate, setCurrentDate] = useState(new Date());
             const [loading, setLoading] = useState(true);
-            const [menuOpen, setMenuOpen] = useState(false); // Side Menu State
+            const [menuOpen, setMenuOpen] = useState(false);
+            const [appTitle, setAppTitle] = useState(localStorage.getItem('appTitle') || TEXT.defaultAppName);
             
             const [newName, setNewName] = useState('');
             const [newGender, setNewGender] = useState('male');
@@ -218,12 +217,21 @@
             
             const [addingToSlot, setAddingToSlot] = useState(null);
             const [personToRemove, setPersonToRemove] = useState(null);
-            const [genSettings, setGenSettings] = useState(null);
+            const [showSettings, setShowSettings] = useState(false); // Settings Modal
+            const [settingsTab, setSettingsTab] = useState('gen'); // gen, sys
+            
+            // Gen Settings
+            const [genTotal, setGenTotal] = useState(4);
+            const [genMorning, setGenMorning] = useState(2);
             const [isOptimizing, setIsOptimizing] = useState(false);
-            const [resForm, setResForm] = useState(null);
-            const [newResData, setNewResData] = useState({ name: '', time: '12:00', pax: 2, tables: '', deposit: 0, status: 'pending' });
 
-            // Auth & Data Listeners (Same as before)
+            // Res
+            const [resForm, setResForm] = useState(null); // { date: Date }
+            const [editingResId, setEditingResId] = useState(null); // ID if editing
+            const [newResData, setNewResData] = useState({ name: '', time: '12:00', pax: 2, tables: '', deposit: 0, status: 'pending' });
+            const [confirmClean, setConfirmClean] = useState(false); // Clean Archive
+
+            // Auth & Data
             useEffect(() => { const u = auth.onAuthStateChanged(u => { setUser(u); setIsAuthReady(true); if(!u){setPeople([]);setSchedule({});setReservations({})} }); return () => u(); }, []);
             useEffect(() => {
                 if(!user || !db) return;
@@ -243,7 +251,13 @@
             const changeMonth = (d) => { const n = new Date(currentDate); n.setMonth(n.getMonth()+d); setCurrentDate(n); };
             const getBarmanArray = (s) => (!s || !s.barman) ? [] : (Array.isArray(s.barman) ? s.barman : [s.barman]);
 
-            // Stats & Logic (Same core logic)
+            // Save Title
+            const saveTitle = (val) => {
+                setAppTitle(val);
+                localStorage.setItem('appTitle', val);
+            };
+
+            // Stats
             const stats = useMemo(() => {
                 const s = {}; people.forEach(p => s[p.id] = { h: 0, covers: 0 });
                 const dim = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate();
@@ -278,9 +292,20 @@
                 return st;
             };
 
-            // DB Actions
+            // Actions
             const addPerson = async () => { if(!newName.trim())return; await db.collection(`${getUserRef()}/people`).add({name:newName.trim(), gender:newGender, role:newRole, daysOff:[], archived:false}); setNewName(''); };
             const archivePerson = async () => { if(personToRemove) { await db.doc(`${getUserRef()}/people/${personToRemove}`).update({archived:true}); setPersonToRemove(null); }};
+            const cleanArchive = async () => {
+                const archived = people.filter(p => p.archived);
+                const batch = db.batch();
+                archived.forEach(p => {
+                    const ref = db.collection(`${getUserRef()}/people`).doc(p.id);
+                    batch.delete(ref);
+                });
+                await batch.commit();
+                setConfirmClean(false);
+            };
+
             const toggleDayOff = async (pid, day) => {
                 const p = getPerson(pid); if(!p)return;
                 const dStr = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toLocaleDateString('en-CA');
@@ -299,18 +324,38 @@
                 await db.doc(`${getUserRef()}/appData/schedule`).set({[ds]:ns}, {merge:true}); setAddingToSlot(null);
             };
             
-            // Reservation Actions
-            const addReservation = async () => {
+            // Reservations
+            const saveReservation = async () => {
                 if (!newResData.name || !resForm.date) return;
                 const ds = resForm.date.toLocaleDateString('en-CA');
                 const list = reservations[ds] || [];
-                const nr = { id: Date.now().toString(), ...newResData };
-                await db.doc(`${getUserRef()}/appData/reservations`).set({ ...reservations, [ds]: [...list, nr] }, { merge: true });
-                setResForm(null); setNewResData({ name: '', time: '12:00', pax: 2, tables: '', deposit: 0, status: 'pending' });
+                
+                let uList;
+                if (editingResId) {
+                    // Edit existing
+                    uList = list.map(r => r.id === editingResId ? { ...newResData, id: editingResId } : r);
+                } else {
+                    // Create new
+                    const nr = { id: Date.now().toString(), ...newResData };
+                    uList = [...list, nr];
+                }
+
+                await db.doc(`${getUserRef()}/appData/reservations`).set({ ...reservations, [ds]: uList }, { merge: true });
+                
+                // Reset but keep form open
+                setEditingResId(null);
+                setNewResData({ name: '', time: '12:00', pax: 2, tables: '', deposit: 0, status: 'pending' });
             };
+
+            const loadResForEdit = (r) => {
+                setEditingResId(r.id);
+                setNewResData({ ...r });
+            };
+
             const removeReservation = async (ds, rid) => {
                 const list = reservations[ds] || [];
                 await db.doc(`${getUserRef()}/appData/reservations`).update({ [ds]: list.filter(r => r.id !== rid) });
+                if (editingResId === rid) { setEditingResId(null); setNewResData({ name: '', time: '12:00', pax: 2, tables: '', deposit: 0, status: 'pending' }); }
             };
             const toggleResStatus = async (ds, rid) => {
                 const list = reservations[ds] || [];
@@ -318,7 +363,7 @@
                 await db.doc(`${getUserRef()}/appData/reservations`).update({ [ds]: uList });
             };
 
-            // Generator
+            // Generator Logic
             const generateScheduleData = (pl, y, m, tot, morn) => {
                 try {
                     const dc = new Date(y, m + 1, 0).getDate();
@@ -376,32 +421,33 @@
             };
 
             const runGenerator = async (opt) => {
-                if(!genSettings) return;
-                const { total, morning } = genSettings;
                 if (opt) {
                     setIsOptimizing(true);
                     setTimeout(async () => {
                         let best = null;
                         for(let i=0; i<20; i++) {
-                            const res = generateScheduleData(people, currentDate.getFullYear(), currentDate.getMonth(), total, morning);
+                            const res = generateScheduleData(people, currentDate.getFullYear(), currentDate.getMonth(), genTotal, genMorning);
                             if (!best || res.diff < best.diff) best = res;
                         }
                         if(best) await db.doc(`${getUserRef()}/appData/schedule`).set(best.schedule, {merge: true});
-                        setIsOptimizing(false); setGenSettings(null); setActiveTab('calendar');
+                        setIsOptimizing(false); setShowSettings(false); setActiveTab('calendar');
                     }, 100);
                 } else {
-                    const res = generateScheduleData(people, currentDate.getFullYear(), currentDate.getMonth(), total, morning);
+                    const res = generateScheduleData(people, currentDate.getFullYear(), currentDate.getMonth(), genTotal, genMorning);
                     await db.doc(`${getUserRef()}/appData/schedule`).set(res.schedule, {merge: true});
-                    setGenSettings(null); setActiveTab('calendar');
+                    setShowSettings(false); setActiveTab('calendar');
                 }
             };
-
+            
             const openGenSettings = () => {
                 const isHigh = currentDate.getMonth() >= 4 && currentDate.getMonth() <= 8;
-                setGenSettings({ show: true, total: isHigh ? 6 : 4, morning: isHigh ? 3 : 2 });
+                setGenTotal(isHigh ? 6 : 4);
+                setGenMorning(isHigh ? 3 : 2);
+                setSettingsTab('gen');
+                setShowSettings(true);
             };
 
-            // --- COPY TO CLIPBOARD ---
+            // Copy
             const copyToGoogle = () => {
                 const year = currentDate.getFullYear();
                 const month = currentDate.getMonth();
@@ -425,25 +471,16 @@
             return (
                 <div className="min-h-screen flex bg-bg text-text">
                     
-                    {/* SIDEBAR NAVIGATION (DRAWER) */}
+                    {/* SIDEBAR NAVIGATION */}
                     <div className={`fixed inset-0 z-50 flex ${menuOpen ? '' : 'pointer-events-none'}`}>
-                        {/* Backdrop */}
                         <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${menuOpen ? 'opacity-100' : 'opacity-0'}`} onClick={() => setMenuOpen(false)} />
-                        
-                        {/* Menu Panel */}
                         <div className={`relative w-72 bg-surface shadow-2xl border-r border-surface2 flex flex-col transform transition-transform duration-300 ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                            {/* Logo Area */}
                             <div className="h-24 flex items-center px-6 border-b border-surface2 bg-bg/50">
-                                <div className="h-10 w-10 bg-surface rounded-full border border-surface2 flex items-center justify-center mr-4">
-                                    <img src="logo.jpg" className="h-full w-full object-cover rounded-full opacity-80" onError={(e)=>{e.target.style.display='none'}} />
+                                <div className="h-10 w-10 bg-surface rounded-full border border-surface2 flex items-center justify-center mr-4 overflow-hidden">
+                                    <img src="logo.jpg" className="h-full w-full object-cover opacity-80" onError={(e)=>{e.target.style.display='none'}} />
                                 </div>
-                                <div>
-                                    <h2 className="font-bold text-lg tracking-wide">{TEXT.appName}</h2>
-                                    <p className="text-xs text-muted uppercase tracking-widest">Menu</p>
-                                </div>
+                                <h2 className="font-bold text-lg tracking-wide text-white">{appTitle}</h2>
                             </div>
-
-                            {/* Links */}
                             <div className="flex-grow py-6 px-3 space-y-1">
                                 {[ 
                                     { id: 'staff', label: TEXT.tabStaff, icon: <Icons.Users /> },
@@ -451,42 +488,23 @@
                                     { id: 'reservations', label: TEXT.tabReservations, icon: <Icons.Book /> },
                                     { id: 'stats', label: TEXT.tabStats, icon: <Icons.Chart /> }
                                 ].map(item => (
-                                    <button key={item.id}
-                                        onClick={() => { setActiveTab(item.id); setMenuOpen(false); }}
-                                        className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 font-medium ${activeTab === item.id ? 'bg-accent text-white shadow-lg shadow-blue-900/20' : 'text-muted hover:bg-surface2 hover:text-white'}`}
-                                    >
-                                        {item.icon}
-                                        <span>{item.label}</span>
+                                    <button key={item.id} onClick={() => { setActiveTab(item.id); setMenuOpen(false); }} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 font-medium ${activeTab === item.id ? 'bg-accent text-white shadow-lg shadow-blue-900/20' : 'text-muted hover:bg-surface2 hover:text-white'}`}>
+                                        {item.icon} <span>{item.label}</span>
                                     </button>
                                 ))}
                             </div>
-
-                            {/* Footer */}
                             <div className="p-6 border-t border-surface2">
-                                <button onClick={() => auth.signOut()} className="flex items-center gap-3 text-muted hover:text-red-400 transition text-sm">
-                                    <Icons.Logout /> {TEXT.btnLogout}
-                                </button>
+                                <button onClick={() => auth.signOut()} className="flex items-center gap-3 text-muted hover:text-red-400 transition text-sm"><Icons.Logout /> {TEXT.btnLogout}</button>
                             </div>
                         </div>
                     </div>
 
                     {/* MAIN LAYOUT */}
                     <div className="flex-grow flex flex-col h-screen overflow-hidden">
-                        {/* TOP BAR */}
                         <header className="h-16 bg-surface/80 backdrop-blur border-b border-surface2 flex items-center justify-between px-4 md:px-8 no-print shrink-0">
-                            <div className="flex items-center gap-4">
-                                <button onClick={() => setMenuOpen(true)} className="p-2 rounded-lg hover:bg-surface2 text-muted hover:text-white transition">
-                                    <Icons.Menu />
-                                </button>
-                                <div className="hidden md:block">
-                                    <span className="text-sm text-muted">{TEXT.appSub}</span>
-                                </div>
-                            </div>
-                            
+                            <button onClick={() => setMenuOpen(true)} className="p-2 rounded-lg hover:bg-surface2 text-muted hover:text-white transition"><Icons.Menu /></button>
                             <div className="flex items-center gap-6">
-                                <div className="hidden md:block text-right border-r border-surface2 pr-6">
-                                    <LiveClock />
-                                </div>
+                                <div className="hidden md:block text-right border-r border-surface2 pr-6"><LiveClock /></div>
                                 <div className="flex items-center bg-surface2 rounded-lg p-0.5">
                                     <button onClick={() => changeMonth(-1)} className="p-1.5 hover:bg-bg rounded text-muted hover:text-white">◀</button>
                                     <span className="px-3 text-sm font-medium min-w-[100px] text-center capitalize">{getMonthName(currentDate)}</span>
@@ -495,13 +513,12 @@
                             </div>
                         </header>
 
-                        {/* CONTENT AREA */}
                         <div className="flex-grow overflow-y-auto p-4 md:p-8">
-                            {/* PRINT HEADER */}
                             <div className="hidden print-show mb-4 border-b pb-2">
-                                <h1 className="text-2xl font-bold text-black">{TEXT.appName} - {getMonthName(currentDate)}</h1>
+                                <h1 className="text-2xl font-bold text-black">{appTitle} - {getMonthName(currentDate)}</h1>
                             </div>
 
+                            {/* --- STAFF --- */}
                             {activeTab === 'staff' && (
                                 <div className="max-w-5xl mx-auto space-y-6">
                                     <div className="bg-surface border border-surface2 p-5 rounded-2xl shadow-lg no-print">
@@ -514,7 +531,6 @@
                                             <button onClick={addPerson} className="bg-accent hover:bg-blue-600 text-white font-medium px-6 py-3 rounded-xl transition shadow-lg shadow-blue-900/20">{TEXT.addBtn}</button>
                                         </div>
                                     </div>
-
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                         {[TEXT.secWaiters, TEXT.secBartenders].map((title, idx) => {
                                             const role = idx === 0 ? 'waiter' : 'bartender';
@@ -525,9 +541,7 @@
                                                         {people.filter(p => p.role === role && !p.archived).map(p => (
                                                             <div key={p.id} className="bg-bg border border-surface2 rounded-xl p-3 hover:border-surface2/80 transition group">
                                                                 <div className="flex justify-between items-center mb-3">
-                                                                    <div className="font-medium text-white flex items-center gap-2">
-                                                                        <span className="text-lg">{p.gender === 'male' ? '👨' : '👩'}</span> {p.name}
-                                                                    </div>
+                                                                    <div className="font-medium text-white flex items-center gap-2"><span className="text-lg">{p.gender === 'male' ? '👨' : '👩'}</span> {p.name}</div>
                                                                     <button onClick={()=>setPersonToRemove(p.id)} className="text-surface2 hover:text-red-400 transition no-print opacity-0 group-hover:opacity-100 p-1">🗑️</button>
                                                                 </div>
                                                                 <div className="flex flex-wrap gap-1 no-print">
@@ -535,18 +549,11 @@
                                                                         const dObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), d);
                                                                         const dStr = dObj.toLocaleDateString('en-CA');
                                                                         const isOff = p.daysOff.includes(dStr);
-                                                                        const isWknd = [0, 5, 6].includes(dObj.getDay()); // Fri, Sat, Sun
-                                                                        
-                                                                        let btnClass = "bg-surface2 text-muted hover:bg-accent hover:text-white"; // Default
-                                                                        if (isWknd) btnClass = "bg-weekend text-slate-300 hover:bg-accent hover:text-white"; // Weekend
-                                                                        if (isOff) btnClass = "bg-red-500/20 text-red-400 border border-red-500/50"; // Off
-
-                                                                        return (
-                                                                            <button key={d} onClick={()=>toggleDayOff(p.id, d)} 
-                                                                                className={`w-8 h-8 text-xs rounded-lg font-medium transition border border-transparent ${btnClass}`}>
-                                                                                {d}
-                                                                            </button>
-                                                                        )
+                                                                        const isWknd = [0, 5, 6].includes(dObj.getDay());
+                                                                        let btnClass = "bg-surface2 text-muted hover:bg-accent hover:text-white";
+                                                                        if (isWknd) btnClass = "bg-weekend text-slate-300 hover:bg-accent hover:text-white";
+                                                                        if (isOff) btnClass = "bg-red-500/20 text-red-400 border border-red-500/50";
+                                                                        return <button key={d} onClick={()=>toggleDayOff(p.id, d)} className={`w-8 h-8 text-xs rounded-lg font-medium transition border border-transparent ${btnClass}`}>{d}</button>
                                                                     })}
                                                                 </div>
                                                             </div>
@@ -556,13 +563,11 @@
                                             )
                                         })}
                                     </div>
-                                    
-                                    <div className="fixed bottom-6 right-6 no-print z-30">
-                                        <button onClick={openGenSettings} className="bg-accent hover:bg-blue-600 text-white h-14 w-14 rounded-full shadow-xl shadow-blue-900/30 flex items-center justify-center text-2xl transition transform hover:scale-110">⚡</button>
-                                    </div>
+                                    <div className="fixed bottom-6 right-6 no-print z-30"><button onClick={openGenSettings} className="bg-accent hover:bg-blue-600 text-white h-14 w-14 rounded-full shadow-xl shadow-blue-900/30 flex items-center justify-center text-2xl transition transform hover:scale-110"><Icons.Settings /></button></div>
                                 </div>
                             )}
 
+                            {/* --- CALENDAR --- */}
                             {activeTab === 'calendar' && (
                                 <div className="max-w-full mx-auto bg-surface border border-surface2 rounded-2xl overflow-hidden shadow-lg">
                                     <div className="p-4 border-b border-surface2 flex justify-between items-center bg-bg/30 no-print">
@@ -590,25 +595,16 @@
                                                     const isWknd = [0, 6].includes(dObj.getDay());
                                                     const s = schedule[dStr] || { barman: [], morning: [], evening: [] };
                                                     const rowClass = isHol ? 'bg-red-900/10' : isWknd ? 'bg-bg/30' : '';
-                                                    
                                                     const Badge = ({uid, type, onDelete}) => {
                                                         const p = getPerson(uid); if(!p)return null;
                                                         const st = getStreak(uid, dStr);
                                                         const isCover = type === 'bar' && p.role === 'waiter';
-                                                        // Onyx Colors
                                                         let cls = "";
                                                         if(type==='bar') cls = isCover ? "bg-yellow-900/30 text-yellow-200 border-yellow-700" : "bg-indigo-900/30 text-indigo-200 border-indigo-700";
                                                         else if(type==='morn') cls = "bg-orange-900/30 text-orange-200 border-orange-700";
                                                         else cls = "bg-blue-900/30 text-blue-200 border-blue-700";
-
-                                                        return (
-                                                            <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs border mr-1 mb-1 ${cls}`}>
-                                                                {p.name} {isCover && '⚠️'} {st>=4 && '🔥'}
-                                                                <button onClick={onDelete} className="ml-1.5 opacity-50 hover:opacity-100 hover:text-red-400 no-print">×</button>
-                                                            </span>
-                                                        )
+                                                        return <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs border mr-1 mb-1 ${cls}`}>{p.name} {isCover && '⚠️'} {st>=4 && '🔥'}<button onClick={onDelete} className="ml-1.5 opacity-50 hover:opacity-100 hover:text-red-400 no-print">×</button></span>
                                                     }
-
                                                     return (
                                                         <tr key={d} className={`group hover:bg-surface2/10 transition ${rowClass}`}>
                                                             <td className="p-3 align-top border-r border-surface2 relative">
@@ -633,40 +629,54 @@
                                 </div>
                             )}
 
+                            {/* --- RESERVATIONS --- */}
                             {activeTab === 'reservations' && (
-                                <div className="max-w-4xl mx-auto space-y-6">
-                                    <div className="bg-surface border border-surface2 p-6 rounded-2xl shadow-lg no-print">
-                                        <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-white">
-                                            <span className="text-accent">📅</span> {TEXT.tabReservations}
-                                        </h2>
-                                        <div className="flex overflow-x-auto pb-2 gap-2 snap-x">
-                                            {Array.from({ length: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate() }, (_, i) => i + 1).map(d => {
-                                                const dObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), d);
-                                                const dStr = dObj.toLocaleDateString('en-CA');
-                                                const has = (reservations[dStr] && reservations[dStr].length > 0);
-                                                const sel = resForm?.date && resForm.date.getDate() === d;
-                                                return (
-                                                    <button key={d} onClick={() => setResForm({ date: dObj })}
-                                                        className={`flex-shrink-0 w-12 h-14 rounded-xl border flex flex-col items-center justify-center transition snap-start
-                                                            ${sel ? 'bg-accent border-accent text-white shadow-lg shadow-blue-900/50' : has ? 'bg-surface2 border-surface2 text-white' : 'bg-bg border-surface2 text-muted hover:bg-surface2'}
-                                                        `}
-                                                    >
-                                                        <span className="text-lg font-bold">{d}</span>
-                                                        {has && <span className="w-1.5 h-1.5 bg-green-400 rounded-full mt-1"></span>}
-                                                    </button>
-                                                )
-                                            })}
+                                <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6">
+                                    {/* Calendar Grid */}
+                                    <div className="bg-surface border border-surface2 p-6 rounded-2xl shadow-lg no-print lg:w-1/3">
+                                        <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-white"><span className="text-accent">📅</span> Kalendarz</h2>
+                                        <div className="grid grid-cols-7 gap-1 text-center">
+                                            {['Pn','Wt','Śr','Cz','Pt','Sb','Nd'].map(d=><div key={d} className="text-xs text-muted font-bold py-2">{d}</div>)}
+                                            {(() => {
+                                                const y = currentDate.getFullYear(), m = currentDate.getMonth();
+                                                const firstDay = new Date(y, m, 1).getDay(); // 0=Sun
+                                                const offset = firstDay === 0 ? 6 : firstDay - 1; // Mon=0
+                                                const dim = new Date(y, m + 1, 0).getDate();
+                                                let slots = [];
+                                                for(let i=0; i<offset; i++) slots.push(<div key={`e-${i}`}></div>);
+                                                for(let d=1; d<=dim; d++) {
+                                                    const dObj = new Date(y, m, d);
+                                                    const dStr = dObj.toLocaleDateString('en-CA');
+                                                    const has = (reservations[dStr] && reservations[dStr].length > 0);
+                                                    const sel = resForm?.date && resForm.date.getDate() === d;
+                                                    slots.push(
+                                                        <button key={d} onClick={() => setResForm({ date: dObj })}
+                                                            className={`h-10 rounded-lg flex items-center justify-center relative transition text-sm font-medium
+                                                                ${sel ? 'bg-accent text-white' : 'hover:bg-surface2 text-slate-300'}
+                                                            `}
+                                                        >
+                                                            {d}
+                                                            {has && <span className="absolute bottom-1 w-1 h-1 bg-green-400 rounded-full"></span>}
+                                                        </button>
+                                                    );
+                                                }
+                                                return slots;
+                                            })()}
                                         </div>
                                     </div>
 
-                                    {resForm?.date && (
-                                        <div className="bg-surface border border-surface2 rounded-2xl overflow-hidden shadow-lg">
+                                    {/* Details Panel */}
+                                    <div className="flex-grow bg-surface border border-surface2 rounded-2xl overflow-hidden shadow-lg">
+                                        {!resForm ? (
+                                            <div className="h-full flex items-center justify-center text-muted p-10 italic">Wybierz dzień z kalendarza</div>
+                                        ) : (
+                                            <>
                                             <div className="bg-bg/50 px-6 py-4 border-b border-surface2 flex justify-between items-center">
                                                 <span className="font-bold text-lg text-white">{resForm.date.toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
                                                 <span className="text-sm text-green-400 font-mono">{TEXT.resTotalDeposit}: {(reservations[resForm.date.toLocaleDateString('en-CA')] || []).reduce((acc, r) => acc + parseFloat(r.deposit || 0), 0)}</span>
                                             </div>
                                             
-                                            {/* ADD FORM */}
+                                            {/* Form */}
                                             <div className="p-5 bg-surface no-print border-b border-surface2">
                                                 <div className="grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
                                                     <div className="col-span-2">
@@ -685,23 +695,30 @@
                                                         <label className="text-[10px] font-bold text-muted uppercase mb-1 block">{TEXT.resTables}</label>
                                                         <input className="w-full bg-bg border border-surface2 p-2 rounded-lg text-sm focus:border-accent outline-none" value={newResData.tables} onChange={e => setNewResData({...newResData, tables: e.target.value})} />
                                                     </div>
-                                                    <button onClick={addReservation} className="bg-accent text-white h-[38px] rounded-lg font-bold hover:bg-blue-600 transition">＋</button>
+                                                    <div className="col-span-1">
+                                                        <label className="text-[10px] font-bold text-muted uppercase mb-1 block">{TEXT.resDeposit}</label>
+                                                        <input type="number" className="w-full bg-bg border border-surface2 p-2 rounded-lg text-sm focus:border-accent outline-none" value={newResData.deposit} onChange={e => setNewResData({...newResData, deposit: e.target.value})} />
+                                                    </div>
                                                 </div>
+                                                <button onClick={saveReservation} className={`mt-3 w-full h-[38px] rounded-lg font-bold transition text-white ${editingResId ? 'bg-orange-600 hover:bg-orange-700' : 'bg-accent hover:bg-blue-600'}`}>
+                                                    {editingResId ? TEXT.resUpdate : TEXT.resAdd}
+                                                </button>
+                                                {editingResId && <button onClick={() => { setEditingResId(null); setNewResData({ name: '', time: '12:00', pax: 2, tables: '', deposit: 0, status: 'pending' }); }} className="mt-2 w-full text-xs text-muted hover:text-white">{TEXT.cancel}</button>}
                                             </div>
 
-                                            {/* LIST */}
+                                            {/* List */}
                                             <div className="p-0">
                                                 {(reservations[resForm.date.toLocaleDateString('en-CA')] || []).sort((a,b) => a.time.localeCompare(b.time)).map(r => (
-                                                    <div key={r.id} className={`flex items-center p-4 border-b border-surface2 last:border-0 hover:bg-white/5 transition ${r.status==='done'?'opacity-50':''}`}>
+                                                    <div key={r.id} className={`flex items-center p-4 border-b border-surface2 last:border-0 hover:bg-white/5 transition cursor-pointer ${r.status==='done'?'opacity-50':''}`} onClick={() => loadResForEdit(r)}>
                                                         <div className="w-16 font-mono font-bold text-lg text-accent">{r.time}</div>
                                                         <div className="flex-grow pl-4">
-                                                            <div className="font-bold text-white">{r.name}</div>
+                                                            <div className="font-bold text-white">{r.name} {editingResId === r.id && <span className="text-xs text-orange-400 ml-2">(Edycja)</span>}</div>
                                                             <div className="text-xs text-muted">{r.pax} os. • Stolik: {r.tables || "-"} • Dep: {r.deposit}</div>
                                                         </div>
-                                                        <div className="flex gap-2 no-print">
+                                                        <div className="flex gap-2 no-print" onClick={e => e.stopPropagation()}>
                                                             <button onClick={()=>toggleResStatus(resForm.date.toLocaleDateString('en-CA'), r.id)} 
                                                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${r.status==='done' ? 'border-green-500 text-green-500' : r.status==='cancelled' ? 'border-red-500 text-red-500' : 'border-surface2 text-muted hover:border-white'}`}>
-                                                                {r.status==='done' ? 'PRZYBYLI' : r.status==='cancelled' ? 'ANULOWANO' : 'OCZEKUJE'}
+                                                                {r.status==='done' ? '✓ OK' : r.status==='cancelled' ? '✕ CANCEL' : '? OCZEKUJE'}
                                                             </button>
                                                             <button onClick={() => removeReservation(resForm.date.toLocaleDateString('en-CA'), r.id)} className="w-8 h-8 rounded-lg bg-surface2 text-muted hover:text-red-400 flex items-center justify-center">×</button>
                                                         </div>
@@ -711,8 +728,9 @@
                                                     <div className="p-8 text-center text-muted italic">{TEXT.resNoData}</div>
                                                 )}
                                             </div>
-                                        </div>
-                                    )}
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
                             )}
 
@@ -756,25 +774,18 @@
                                 </div>
                                 <div className="max-h-[60vh] overflow-y-auto p-2 space-y-1">
                                     {people.filter(p => !p.archived).map(p => {
-                                        // Filter Logic
                                         if (addingToSlot.type !== 'bar' && p.role !== 'waiter') return null;
                                         const s = schedule[addingToSlot.date];
                                         if(s && (getBarmanArray(s).includes(p.id) || s.morning.includes(p.id) || s.evening.includes(p.id))) return null;
-                                        
                                         const isOff = p.daysOff.includes(addingToSlot.date);
                                         const curH = stats[p.id]?.h || 0;
                                         const addH = addingToSlot.type === 'morning' ? 10 : 12;
-
                                         return (
-                                            <button key={p.id} disabled={isOff}
-                                                onClick={()=>{ addToShift(addingToSlot.date, addingToSlot.type, p.id); }} 
-                                                className={`w-full text-left px-4 py-3 rounded-xl flex justify-between items-center transition border border-transparent
-                                                    ${isOff ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface2 hover:border-surface2'}
-                                                `}>
+                                            <button key={p.id} disabled={isOff} onClick={()=>{ addToShift(addingToSlot.date, addingToSlot.type, p.id); }} 
+                                                className={`w-full text-left px-4 py-3 rounded-xl flex justify-between items-center transition border border-transparent ${isOff ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface2 hover:border-surface2'}`}>
                                                 <div>
                                                     <div className="font-bold text-white flex items-center gap-2">
-                                                        {p.name} 
-                                                        {p.role==='waiter' && addingToSlot.type==='bar' && <span className="text-[10px] bg-yellow-900/50 text-yellow-200 px-1.5 rounded border border-yellow-700">Zastępstwo</span>}
+                                                        {p.name} {p.role==='waiter' && addingToSlot.type==='bar' && <span className="text-[10px] bg-yellow-900/50 text-yellow-200 px-1.5 rounded border border-yellow-700">Zastępstwo</span>}
                                                     </div>
                                                     <div className="text-xs text-muted mt-1">{curH}h <span className="text-accent">→ {curH + addH}h</span></div>
                                                 </div>
@@ -787,33 +798,62 @@
                         </div>
                     )}
 
-                    {genSettings?.show && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={()=>setGenSettings(null)}>
-                            <div className="bg-surface border border-surface2 rounded-2xl w-full max-w-sm p-6 shadow-2xl" onClick={e=>e.stopPropagation()}>
-                                <h3 className="text-xl font-bold text-white mb-6">{TEXT.genSettings}</h3>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="text-xs font-bold text-muted uppercase mb-1 block">{TEXT.totalStaff}</label>
-                                        <input type="number" value={genSettings.total} onChange={e=>setGenSettings({...genSettings, total: parseInt(e.target.value)})} className="w-full bg-bg border border-surface2 rounded-xl p-3 text-center text-white text-lg focus:border-accent outline-none" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-muted uppercase mb-1 block">{TEXT.morningStaff}</label>
-                                        <input type="number" value={genSettings.morning} onChange={e=>setGenSettings({...genSettings, morning: parseInt(e.target.value)})} className="w-full bg-bg border border-surface2 rounded-xl p-3 text-center text-white text-lg focus:border-accent outline-none" />
-                                    </div>
+                    {showSettings && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={()=>setShowSettings(false)}>
+                            <div className="bg-surface border border-surface2 rounded-2xl w-full max-w-md p-6 shadow-2xl" onClick={e=>e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-xl font-bold text-white">{TEXT.settingsTitle}</h3>
+                                    <button onClick={()=>setShowSettings(false)}><Icons.Close /></button>
                                 </div>
-                                <div className="flex flex-col gap-3 mt-8">
-                                    {isOptimizing ? (
-                                        <div className="text-center py-3 text-accent font-mono animate-pulse">{TEXT.optimizing}</div>
-                                    ) : (
-                                        <>
-                                            <div className="flex gap-3">
-                                                <button onClick={()=>runGenerator(false)} className="flex-1 py-3 bg-surface2 hover:bg-bg text-white rounded-xl transition border border-surface2 font-medium">{TEXT.generate}</button>
-                                                <button onClick={()=>runGenerator(true)} className="flex-1 py-3 bg-accent hover:bg-blue-600 text-white rounded-xl transition shadow-lg shadow-blue-900/20 font-medium">{TEXT.optimizeBtn}</button>
+                                <div className="flex border-b border-surface2 mb-6">
+                                    <button onClick={()=>setSettingsTab('gen')} className={`pb-2 px-4 text-sm font-medium transition border-b-2 ${settingsTab==='gen'?'border-accent text-white':'border-transparent text-muted hover:text-white'}`}>{TEXT.settGen}</button>
+                                    <button onClick={()=>setSettingsTab('sys')} className={`pb-2 px-4 text-sm font-medium transition border-b-2 ${settingsTab==='sys'?'border-accent text-white':'border-transparent text-muted hover:text-white'}`}>{TEXT.settSys}</button>
+                                </div>
+
+                                {settingsTab === 'gen' ? (
+                                    <>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="text-xs font-bold text-muted uppercase mb-1 block">{TEXT.totalStaff}</label>
+                                                <input type="number" value={genTotal} onChange={e=>setGenTotal(parseInt(e.target.value))} className="w-full bg-bg border border-surface2 rounded-xl p-3 text-center text-white text-lg focus:border-accent outline-none" />
                                             </div>
-                                            <button onClick={()=>setGenSettings(null)} className="w-full py-3 text-muted hover:text-white transition">{TEXT.cancel}</button>
-                                        </>
-                                    )}
-                                </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-muted uppercase mb-1 block">{TEXT.morningStaff}</label>
+                                                <input type="number" value={genMorning} onChange={e=>setGenMorning(parseInt(e.target.value))} className="w-full bg-bg border border-surface2 rounded-xl p-3 text-center text-white text-lg focus:border-accent outline-none" />
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-3 mt-8">
+                                            {isOptimizing ? (
+                                                <div className="text-center py-3 text-accent font-mono animate-pulse">{TEXT.optimizing}</div>
+                                            ) : (
+                                                <div className="flex gap-3">
+                                                    <button onClick={()=>runGenerator(false)} className="flex-1 py-3 bg-surface2 hover:bg-bg text-white rounded-xl transition border border-surface2 font-medium">{TEXT.generate}</button>
+                                                    <button onClick={()=>runGenerator(true)} className="flex-1 py-3 bg-accent hover:bg-blue-600 text-white rounded-xl transition shadow-lg shadow-blue-900/20 font-medium">{TEXT.optimizeBtn}</button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="space-y-6">
+                                        <div>
+                                            <label className="text-xs font-bold text-muted uppercase mb-1 block">{TEXT.headerName}</label>
+                                            <input value={appTitle} onChange={e=>saveTitle(e.target.value)} className="w-full bg-bg border border-surface2 rounded-xl p-3 text-white text-sm focus:border-accent outline-none" />
+                                        </div>
+                                        <div className="pt-4 border-t border-surface2">
+                                            {!confirmClean ? (
+                                                <button onClick={()=>setConfirmClean(true)} className="w-full py-3 border border-red-500/50 text-red-400 rounded-xl hover:bg-red-500/10 transition">{TEXT.cleanConfirm}</button>
+                                            ) : (
+                                                <div className="bg-red-900/20 p-4 rounded-xl border border-red-900/50">
+                                                    <p className="text-xs text-red-300 mb-3">{TEXT.cleanSub}</p>
+                                                    <div className="flex gap-3">
+                                                        <button onClick={()=>setConfirmClean(false)} className="flex-1 py-2 bg-bg text-muted rounded-lg text-sm">{TEXT.cancel}</button>
+                                                        <button onClick={cleanArchive} className="flex-1 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700">{TEXT.cleanBtn}</button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -821,8 +861,8 @@
                     {personToRemove && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={()=>setPersonToRemove(null)}>
                             <div className="bg-surface border border-surface2 rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center" onClick={e=>e.stopPropagation()}>
-                                <div className="text-lg font-bold text-white mb-2">{TEXT.deleteConfirm}</div>
-                                <div className="text-sm text-muted mb-6">{TEXT.deleteSub}</div>
+                                <h3 className="font-bold text-lg text-white mb-2">{TEXT.deleteConfirm}</h3>
+                                <p className="text-sm text-muted mb-6">{TEXT.deleteSub}</p>
                                 <div className="flex gap-3">
                                     <button onClick={()=>setPersonToRemove(null)} className="flex-1 py-2 bg-surface2 text-white rounded-xl">{TEXT.cancel}</button>
                                     <button onClick={archivePerson} className="flex-1 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700">{TEXT.archive}</button>
@@ -855,7 +895,7 @@
                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
                         <div className="text-center mb-8">
                             <h1 className="text-3xl font-bold tracking-tighter mb-1">KUTER</h1>
-                            <p className="text-muted text-sm uppercase tracking-widest">System v9.0</p>
+                            <p className="text-muted text-sm uppercase tracking-widest">System v9.1</p>
                         </div>
                         <form onSubmit={handle} className="space-y-4">
                             <div>
