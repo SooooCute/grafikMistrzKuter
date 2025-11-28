@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUTER - System Grafik v0.0.3</title>
+    <title>KUTER - System Grafik v0.0.4</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -46,7 +46,6 @@
     
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; -webkit-tap-highlight-color: transparent; }
-        
         .loader {
             border: 3px solid #334155;
             border-top: 3px solid #3b82f6;
@@ -69,7 +68,7 @@
             errDiv.innerHTML = '<h3 style="margin-top:0">CRITICAL ERROR</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("--- KUTER SYSTEM v0.0.3 LOADED ---");
+        console.log("--- KUTER SYSTEM v0.0.4 LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -99,7 +98,7 @@
         // --- TEXTS ---
         const TEXT = {
             defaultAppName: "KUTER",
-            appSub: "System v0.0.3",
+            appSub: "System v0.0.4",
             tabStaff: "Zespół",
             tabCalendar: "Grafik",
             tabStats: "Raporty",
@@ -237,8 +236,16 @@
             const getBarmanArray = (s) => (!s || !s.barman) ? [] : (Array.isArray(s.barman) ? s.barman : [s.barman]);
             const saveTitle = (val) => { setAppTitle(val); localStorage.setItem('appTitle', val); };
 
+            // UPDATED STATS CALCULATION
             const stats = useMemo(() => {
-                const s = {}; people.forEach(p => s[p.id] = { h: 0, covers: 0 });
+                const s = {}; 
+                const monthPrefix = `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2, '0')}`;
+                
+                people.forEach(p => { 
+                    const offCount = p.daysOff.filter(d => d.startsWith(monthPrefix)).length;
+                    s[p.id] = { h: 0, covers: 0, off: offCount }; 
+                });
+
                 const dim = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate();
                 for(let i=1; i<=dim; i++) {
                     const dStr = new Date(currentDate.getFullYear(), currentDate.getMonth(), i).toLocaleDateString('en-CA');
@@ -373,7 +380,7 @@
             
             const openGenSettings = () => { const h = currentDate.getMonth() >= 4 && currentDate.getMonth() <= 8; setGenTotal(h ? 6 : 4); setGenMorning(h ? 3 : 2); setSettingsTab('gen'); setShowSettings(true); };
             
-            // --- COPY WITH FORMATTING ---
+            // --- UPDATED COPY TO CLIPBOARD ---
             const copyToClipboard = () => {
                 const year = currentDate.getFullYear();
                 const month = currentDate.getMonth();
@@ -383,7 +390,6 @@
                 let tsv = "Data\tBar\tRano\tPopołudnie\n";
 
                 // 2. HTML for formatting
-                // Note: We add the report data BELOW the table for easy copying
                 let html = `<table border="1" style="border-collapse: collapse; font-family: Arial, sans-serif;">
                     <thead>
                         <tr style="background-color: #f3f4f6; font-weight: bold;">
@@ -426,25 +432,30 @@
                     </tr>`;
                 }
 
-                // Add Report Section to Copy
+                // --- DETAILED REPORT SECTION ---
                 html += `<tr><td colspan="4" style="border:none; height:20px;"></td></tr>
-                         <tr><td colspan="4" style="font-weight:bold; font-size:14px; border:none;">RAPORT GODZIN:</td></tr>
-                         <tr><td colspan="4" style="border:none;"><div style="display:flex; flex-wrap:wrap; gap:10px;">`;
+                         <tr><td colspan="4" style="font-weight:bold; font-size:14px; border:1px solid #000; background-color:#f3f4f6;">RAPORT MIESIĘCZNY:</td></tr>
+                         <tr style="font-weight:bold; background-color:#e5e7eb;">
+                            <td style="border:1px solid #000;">Pracownik</td>
+                            <td style="border:1px solid #000;">Godziny</td>
+                            <td style="border:1px solid #000;">Dni Wolne</td>
+                            <td style="border:1px solid #000;">Dodatkowe</td>
+                         </tr>`;
                 
                 people.filter(p => !p.archived).forEach(p => {
-                    const h = stats[p.id]?.h || 0;
-                    const daysOff = p.daysOff.filter(d => d.startsWith(`${year}-${String(month + 1).padStart(2, '0')}`)).length;
-                    const barShifts = p.role === 'waiter' ? (stats[p.id]?.covers || 0) : 0;
+                    const s = stats[p.id] || { h: 0, covers: 0, off: 0 };
+                    const barText = (p.role === 'waiter' && s.covers > 0) ? `Bar: ${s.covers}` : "";
                     
-                    let info = `${p.name}: ${h}h | Wolne: ${daysOff}`;
-                    if (barShifts > 0) info += ` | Bar: ${barShifts}`;
-                    
-                    html += `<span style="border:1px solid #ccc; padding:2px 5px; margin-right:5px; background-color: #f9fafb;">${info}</span>`;
+                    html += `<tr>
+                        <td style="border:1px solid #000;">${p.name}</td>
+                        <td style="border:1px solid #000; color:#1d4ed8; font-weight:bold;">${s.h}h</td>
+                        <td style="border:1px solid #000; color:#dc2626; font-weight:bold;">${s.off}</td>
+                        <td style="border:1px solid #000; color:#d97706;">${barText}</td>
+                    </tr>`;
                 });
                 
-                html += `</div></td></tr></tbody></table>`;
+                html += `</tbody></table>`;
 
-                // Copy Logic
                 const blobText = new Blob([tsv], { type: 'text/plain' });
                 const blobHtml = new Blob([html], { type: 'text/html' });
                 
@@ -678,7 +689,11 @@
                                                         <div key={p.id}>
                                                             <div className="flex justify-between text-sm mb-2 font-medium">
                                                                 <span className={`text-white ${p.archived ? 'line-through text-muted' : ''}`}>{p.name}</span>
-                                                                <span className="text-muted font-mono">{stats[p.id].h}h {role==='waiter' && stats[p.id].covers > 0 && <span className="text-yellow-500 ml-2">({stats[p.id].covers}B)</span>}</span>
+                                                                <div className="text-muted flex gap-3 text-xs">
+                                                                    <span className="font-mono text-accent">{stats[p.id].h}h</span>
+                                                                    <span className="text-red-400 font-bold">Wolne: {stats[p.id].off}</span>
+                                                                    {role==='waiter' && stats[p.id].covers > 0 && <span className="text-yellow-500 font-bold">Bar: {stats[p.id].covers}</span>}
+                                                                </div>
                                                             </div>
                                                             <div className="w-full bg-bg rounded-full h-2 overflow-hidden border border-surface2">
                                                                 <div className={`h-full rounded-full ${role==='waiter'?'bg-accent':'bg-indigo-500'} ${p.archived?'opacity-50':''}`} style={{width: `${(stats[p.id].h / maxHours) * 100}%`}}></div>
@@ -934,7 +949,7 @@
                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
                         <div className="text-center mb-8">
                             <h1 className="text-3xl font-bold tracking-tighter mb-1">KUTER</h1>
-                            <p className="text-muted text-sm uppercase tracking-widest">System v0.0.2</p>
+                            <p className="text-muted text-sm uppercase tracking-widest">System v0.0.4</p>
                         </div>
                         <form onSubmit={handle} className="space-y-4">
                             <div>
