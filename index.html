@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUTER - System Grafik v0.0.4</title>
+    <title>KUTER - System Grafik v0.0.5</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -46,6 +46,7 @@
     
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; -webkit-tap-highlight-color: transparent; }
+        
         .loader {
             border: 3px solid #334155;
             border-top: 3px solid #3b82f6;
@@ -68,7 +69,7 @@
             errDiv.innerHTML = '<h3 style="margin-top:0">CRITICAL ERROR</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("--- KUTER SYSTEM v0.0.4 LOADED ---");
+        console.log("--- KUTER SYSTEM v0.0.5 LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -98,7 +99,7 @@
         // --- TEXTS ---
         const TEXT = {
             defaultAppName: "KUTER",
-            appSub: "System v0.0.4",
+            appSub: "System v0.0.5",
             tabStaff: "Zespół",
             tabCalendar: "Grafik",
             tabStats: "Raporty",
