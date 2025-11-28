@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUTER - System Grafik v0.0.1</title>
+    <title>KUTER - System Grafik v0.0.2</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -69,7 +69,7 @@
             errDiv.innerHTML = '<h3 style="margin-top:0">CRITICAL ERROR</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("--- KUTER SYSTEM v0.0.1 LOADED ---");
+        console.log("--- KUTER SYSTEM v0.0.2 LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -99,7 +99,7 @@
         // --- TEXTS ---
         const TEXT = {
             defaultAppName: "KUTER",
-            appSub: "System v0.0.1",
+            appSub: "System v0.0.2",
             tabStaff: "Zespół",
             tabCalendar: "Grafik",
             tabStats: "Raporty",
@@ -424,7 +424,18 @@
                         <td style="padding: 5px; border: 1px solid #d1d5db; color: #1e3a8a;">${eve}</td>
                     </tr>`;
                 }
-                html += `</tbody></table>`;
+
+                // Add Report Section to Copy
+                html += `<tr><td colspan="4" style="border:none; height:20px;"></td></tr>
+                         <tr><td colspan="4" style="font-weight:bold; font-size:14px; border:none;">RAPORT GODZIN:</td></tr>
+                         <tr><td colspan="4" style="border:none;"><div style="display:flex; flex-wrap:wrap; gap:10px;">`;
+                
+                people.filter(p => !p.archived).forEach(p => {
+                    const h = stats[p.id]?.h || 0;
+                    html += `<span style="border:1px solid #ccc; padding:2px 5px; margin-right:5px;">${p.name}: ${h}h</span>`;
+                });
+                
+                html += `</div></td></tr></tbody></table>`;
 
                 // Copy Logic
                 const blobText = new Blob([tsv], { type: 'text/plain' });
@@ -439,12 +450,10 @@
                         () => alert(TEXT.copySuccess),
                         (err) => {
                             console.error("Clipboard write failed", err);
-                            // Fallback
                             navigator.clipboard.writeText(tsv).then(() => alert(TEXT.copySuccess));
                         }
                     );
                 } catch (e) {
-                    // Fallback for older browsers
                      navigator.clipboard.writeText(tsv).then(() => alert(TEXT.copySuccess));
                 }
             };
