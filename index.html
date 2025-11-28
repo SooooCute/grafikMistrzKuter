@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUTER - System Grafik v9.5</title>
+    <title>KUTER - System Grafik v9.6</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,75 +47,72 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; -webkit-tap-highlight-color: transparent; }
         
-        /* --- PRINT STYLES (PORTRAIT OPTIMIZED) --- */
+        /* --- PRINT STYLES (PORTRAIT GRID) --- */
         @media print {
             @page { 
-                size: A4 portrait;   /* ИЗМЕНЕНО НА PORTRAIT */
-                margin: 5mm; 
+                size: A4 portrait; 
+                margin: 1cm; 
             }
             
-            /* Reset ALL colors to Black/White */
+            /* Reset ALL colors */
             * {
                 background-color: white !important;
                 color: black !important;
                 border-color: black !important;
                 box-shadow: none !important;
                 text-shadow: none !important;
-                border-radius: 0 !important; 
+                border-radius: 0 !important;
             }
 
             /* Hide UI */
-            .no-print, header, nav, .fixed, button, .print-hide { display: none !important; }
+            .no-print, header, nav, .fixed, button { display: none !important; }
             .print-show { display: block !important; }
             
-            /* Layout Reset */
+            /* Layout */
             body, #root, main { 
                 width: 100% !important; 
                 margin: 0 !important; 
                 padding: 0 !important; 
                 font-family: Arial, sans-serif !important;
                 font-size: 10pt !important;
-                zoom: 0.52; /* Масштаб подобран под ширину A4 в портрете */
+                overflow: visible !important;
             }
 
             .overflow-x-auto { overflow: visible !important; }
             
-            /* Table Styling - Explicit Grid */
+            /* Table Grid */
             table { 
                 width: 100% !important; 
                 border-collapse: collapse !important; 
-                border: 2px solid #000 !important; /* Thick outer border */
-                margin-top: 5px;
-                table-layout: fixed; /* Fix column widths */
+                border: 2px solid #000 !important;
+                margin-top: 10px;
             }
             
             /* Header Cells */
             thead th {
-                background-color: #e0e0e0 !important;
+                background-color: #eee !important;
                 font-weight: bold !important;
                 border: 1px solid #000 !important;
-                padding: 4px !important;
+                padding: 5px !important;
                 text-transform: uppercase;
                 font-size: 9pt !important;
                 text-align: center !important;
             }
 
+            /* Body Cells - GRID LINES */
+            tbody td {
+                border: 1px solid #000 !important; /* ЭТО ДЕЛАЕТ СЕТКУ */
+                padding: 4px 6px !important;
+                vertical-align: top !important;
+            }
+
             /* Column Widths for Portrait */
-            th:nth-child(1) { width: 8%; }  /* Data */
-            th:nth-child(2) { width: 22%; } /* Bar */
+            th:nth-child(1) { width: 10%; } /* Data */
+            th:nth-child(2) { width: 20%; } /* Bar */
             th:nth-child(3) { width: 35%; } /* Rano */
             th:nth-child(4) { width: 35%; } /* Popoludnie */
 
-            /* Body Cells - Horizontal Lines */
-            tbody td {
-                border: 1px solid #000 !important; /* GRID LINES */
-                padding: 3px 5px !important;
-                vertical-align: middle !important;
-                word-wrap: break-word; /* Wrap long names if needed */
-            }
-
             /* Content formatting */
-            td div.flex { display: block !important; }
             span.inline-flex {
                 display: inline !important;
                 border: none !important;
@@ -123,31 +120,33 @@
                 margin: 0 !important;
                 font-weight: normal !important;
             }
-            /* Comma separation */
             span.inline-flex::after { content: ", "; }
             span.inline-flex:last-child::after { content: ""; }
 
             /* Header */
             h1 { 
-                font-size: 16pt !important; 
+                font-size: 18pt !important; 
                 font-weight: bold !important; 
                 text-align: center !important; 
-                margin-bottom: 5mm !important;
+                margin-bottom: 10mm !important;
                 border-bottom: 2px solid black;
                 padding-bottom: 2mm;
             }
 
             /* Footer Stats */
             .print-stats { 
-                display: grid !important; 
-                grid-template-columns: repeat(4, 1fr); /* 4 columns for portrait width */
-                gap: 5px; 
-                margin-top: 15px; 
+                display: block !important;
+                margin-top: 20px; 
                 border-top: 2px solid #000; 
                 padding-top: 10px; 
                 page-break-inside: avoid;
             }
-            .print-stat-item { font-size: 9pt; border: 1px solid #ccc; padding: 2px 4px; }
+            .print-stats-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr); /* 3 columns for names */
+                gap: 5px;
+            }
+            .print-stat-item { font-size: 9pt; padding: 2px; }
         }
         .print-show, .print-stats { display: none; }
         
@@ -165,7 +164,6 @@
 <body>
     <div id="root"></div>
 
-    <!-- Error Handler -->
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             const errDiv = document.createElement('div');
@@ -173,7 +171,7 @@
             errDiv.innerHTML = '<h3 style="margin-top:0">CRITICAL ERROR</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("--- KUTER SYSTEM v9.5 LOADED ---");
+        console.log("--- KUTER SYSTEM v9.6 LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -203,7 +201,7 @@
         // --- TEXTS ---
         const TEXT = {
             defaultAppName: "KUTER",
-            appSub: "System v9.5",
+            appSub: "System v9.6",
             tabStaff: "Zespół",
             tabCalendar: "Grafik",
             tabStats: "Raporty",
@@ -214,7 +212,7 @@
             namePlaceholder: "Nazwisko...",
             genBtn: "Generuj",
             optimizeBtn: "Optymalizuj",
-            exportGoogle: "Kopiuj (Google)",
+            exportGoogle: "Kopiuj",
             printBtn: "Drukuj",
             dateCol: "Data",
             barCol: "Bar",
@@ -638,9 +636,11 @@
                                     {/* PRINT FOOTER STATS */}
                                     <div className="print-stats no-print print-show">
                                         <div className="w-full font-bold mb-2 border-b border-black pb-1">RAPORT GODZIN:</div>
-                                        {people.filter(p=>!p.archived).map(p=>(
-                                            <div key={p.id} className="print-stat-item">{p.name}: {stats[p.id].h}h</div>
-                                        ))}
+                                        <div className="print-stats-grid">
+                                            {people.filter(p=>!p.archived).map(p=>(
+                                                <div key={p.id} className="print-stat-item">{p.name}: {stats[p.id].h}h</div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -964,7 +964,7 @@
                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
                         <div className="text-center mb-8">
                             <h1 className="text-3xl font-bold tracking-tighter mb-1">KUTER</h1>
-                            <p className="text-muted text-sm uppercase tracking-widest">System v9.4</p>
+                            <p className="text-muted text-sm uppercase tracking-widest">System v9.6</p>
                         </div>
                         <form onSubmit={handle} className="space-y-4">
                             <div>
