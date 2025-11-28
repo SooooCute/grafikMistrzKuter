@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUTER - System Grafik v9.6</title>
+    <title>KUTER - System Grafik v0.0.1</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,109 +47,6 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; -webkit-tap-highlight-color: transparent; }
         
-        /* --- PRINT STYLES (PORTRAIT GRID) --- */
-        @media print {
-            @page { 
-                size: A4 portrait; 
-                margin: 1cm; 
-            }
-            
-            /* Reset ALL colors */
-            * {
-                background-color: white !important;
-                color: black !important;
-                border-color: black !important;
-                box-shadow: none !important;
-                text-shadow: none !important;
-                border-radius: 0 !important;
-            }
-
-            /* Hide UI */
-            .no-print, header, nav, .fixed, button { display: none !important; }
-            .print-show { display: block !important; }
-            
-            /* Layout */
-            body, #root, main { 
-                width: 100% !important; 
-                margin: 0 !important; 
-                padding: 0 !important; 
-                font-family: Arial, sans-serif !important;
-                font-size: 10pt !important;
-                overflow: visible !important;
-            }
-
-            .overflow-x-auto { overflow: visible !important; }
-            
-            /* Table Grid */
-            table { 
-                width: 100% !important; 
-                border-collapse: collapse !important; 
-                border: 2px solid #000 !important;
-                margin-top: 10px;
-            }
-            
-            /* Header Cells */
-            thead th {
-                background-color: #eee !important;
-                font-weight: bold !important;
-                border: 1px solid #000 !important;
-                padding: 5px !important;
-                text-transform: uppercase;
-                font-size: 9pt !important;
-                text-align: center !important;
-            }
-
-            /* Body Cells - GRID LINES */
-            tbody td {
-                border: 1px solid #000 !important; /* ЭТО ДЕЛАЕТ СЕТКУ */
-                padding: 4px 6px !important;
-                vertical-align: top !important;
-            }
-
-            /* Column Widths for Portrait */
-            th:nth-child(1) { width: 10%; } /* Data */
-            th:nth-child(2) { width: 20%; } /* Bar */
-            th:nth-child(3) { width: 35%; } /* Rano */
-            th:nth-child(4) { width: 35%; } /* Popoludnie */
-
-            /* Content formatting */
-            span.inline-flex {
-                display: inline !important;
-                border: none !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                font-weight: normal !important;
-            }
-            span.inline-flex::after { content: ", "; }
-            span.inline-flex:last-child::after { content: ""; }
-
-            /* Header */
-            h1 { 
-                font-size: 18pt !important; 
-                font-weight: bold !important; 
-                text-align: center !important; 
-                margin-bottom: 10mm !important;
-                border-bottom: 2px solid black;
-                padding-bottom: 2mm;
-            }
-
-            /* Footer Stats */
-            .print-stats { 
-                display: block !important;
-                margin-top: 20px; 
-                border-top: 2px solid #000; 
-                padding-top: 10px; 
-                page-break-inside: avoid;
-            }
-            .print-stats-grid {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr); /* 3 columns for names */
-                gap: 5px;
-            }
-            .print-stat-item { font-size: 9pt; padding: 2px; }
-        }
-        .print-show, .print-stats { display: none; }
-        
         .loader {
             border: 3px solid #334155;
             border-top: 3px solid #3b82f6;
@@ -164,6 +61,7 @@
 <body>
     <div id="root"></div>
 
+    <!-- Error Handler -->
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             const errDiv = document.createElement('div');
@@ -171,7 +69,7 @@
             errDiv.innerHTML = '<h3 style="margin-top:0">CRITICAL ERROR</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("--- KUTER SYSTEM v9.6 LOADED ---");
+        console.log("--- KUTER SYSTEM v0.0.1 LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -201,7 +99,7 @@
         // --- TEXTS ---
         const TEXT = {
             defaultAppName: "KUTER",
-            appSub: "System v9.6",
+            appSub: "System v0.0.1",
             tabStaff: "Zespół",
             tabCalendar: "Grafik",
             tabStats: "Raporty",
@@ -212,8 +110,8 @@
             namePlaceholder: "Nazwisko...",
             genBtn: "Generuj",
             optimizeBtn: "Optymalizuj",
-            exportGoogle: "Kopiuj",
-            printBtn: "Drukuj",
+            exportGoogle: "📋 Kopiuj", // Изменено
+            // printBtn удален
             dateCol: "Data",
             barCol: "Bar",
             morningCol: "Rano",
@@ -240,7 +138,7 @@
             cleanBtn: "Usuń Trwale",
             headerName: "Nazwa Lokalu",
             errorAuth: "Błąd danych.",
-            copySuccess: "Skopiowano!",
+            copySuccess: "Skopiowano! Wklej (Ctrl+V) w Google Sheets / Excel.",
             optimizing: "Przeliczanie...",
             resAddBtn: "+ Nowa Rezerwacja",
             resGridBtn: "📅 Kalendarz",
@@ -475,6 +373,7 @@
             };
             
             const openGenSettings = () => { const h = currentDate.getMonth() >= 4 && currentDate.getMonth() <= 8; setGenTotal(h ? 6 : 4); setGenMorning(h ? 3 : 2); setSettingsTab('gen'); setShowSettings(true); };
+            
             const copyToGoogle = () => {
                 const y = currentDate.getFullYear(); const m = currentDate.getMonth(); const dim = new Date(y, m + 1, 0).getDate();
                 let tsv = "Data\tDzień\tŚwięto\tBar\tRano\tPopołudnie\n";
@@ -483,7 +382,8 @@
                     const bms = getBarmanArray(s).map(id => getPerson(id)?.name || "").join(", ");
                     const mns = s.morning.map(id => getPerson(id)?.name || "").join(", ");
                     const ens = s.evening.map(id => getPerson(id)?.name || "").join(", ");
-                    tsv += `${date.toLocaleDateString('pl-PL')}\t${date.toLocaleDateString('pl-PL',{weekday:'long'})}\t${holidays.includes(ds)?"TAK":""}\t${bms}\t${mns}\t${ens}\n`;
+                    const isHol = holidays.includes(ds) ? "TAK" : "";
+                    tsv += `${date.toLocaleDateString('pl-PL')}\t${date.toLocaleDateString('pl-PL',{weekday:'long'})}\t${isHol}\t${bms}\t${mns}\t${ens}\n`;
                 }
                 navigator.clipboard.writeText(tsv).then(()=>alert(TEXT.copySuccess));
             };
@@ -581,7 +481,6 @@
                                         <div className="text-xs text-muted uppercase font-bold tracking-wider">Grafik Zmian</div>
                                         <div className="flex gap-2">
                                             <button onClick={copyToGoogle} className="bg-surface2 hover:bg-surface2/80 text-xs px-3 py-2 rounded-lg transition">{TEXT.exportGoogle}</button>
-                                            <button onClick={()=>window.print()} className="bg-surface2 hover:bg-surface2/80 text-xs px-3 py-2 rounded-lg transition">{TEXT.printBtn}</button>
                                         </div>
                                     </div>
                                     <div className="overflow-x-auto">
@@ -632,15 +531,6 @@
                                                 })}
                                             </tbody>
                                         </table>
-                                    </div>
-                                    {/* PRINT FOOTER STATS */}
-                                    <div className="print-stats no-print print-show">
-                                        <div className="w-full font-bold mb-2 border-b border-black pb-1">RAPORT GODZIN:</div>
-                                        <div className="print-stats-grid">
-                                            {people.filter(p=>!p.archived).map(p=>(
-                                                <div key={p.id} className="print-stat-item">{p.name}: {stats[p.id].h}h</div>
-                                            ))}
-                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -964,7 +854,7 @@
                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
                         <div className="text-center mb-8">
                             <h1 className="text-3xl font-bold tracking-tighter mb-1">KUTER</h1>
-                            <p className="text-muted text-sm uppercase tracking-widest">System v9.6</p>
+                            <p className="text-muted text-sm uppercase tracking-widest">System v0.0.1</p>
                         </div>
                         <form onSubmit={handle} className="space-y-4">
                             <div>
