@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUTER - System Grafik v0.0.5</title>
+    <title>KUTER - System Grafik v0.0.6</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -46,7 +46,6 @@
     
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; -webkit-tap-highlight-color: transparent; }
-        
         .loader {
             border: 3px solid #334155;
             border-top: 3px solid #3b82f6;
@@ -69,7 +68,7 @@
             errDiv.innerHTML = '<h3 style="margin-top:0">CRITICAL ERROR</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("--- KUTER SYSTEM v0.0.5 LOADED ---");
+        console.log("--- KUTER SYSTEM v0.0.6 LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -99,7 +98,7 @@
         // --- TEXTS ---
         const TEXT = {
             defaultAppName: "KUTER",
-            appSub: "System v0.0.5",
+            appSub: "System v0.0.6",
             tabStaff: "Zespół",
             tabCalendar: "Grafik",
             tabStats: "Raporty",
@@ -111,7 +110,7 @@
             genBtn: "Generuj",
             optimizeBtn: "Optymalizuj",
             exportGoogle: "📋 Kopiuj",
-            dateCol: "Data",
+            dateCol: "Dzień",
             barCol: "Bar",
             morningCol: "Rano",
             eveningCol: "Popołudnie",
@@ -237,17 +236,17 @@
             const getBarmanArray = (s) => (!s || !s.barman) ? [] : (Array.isArray(s.barman) ? s.barman : [s.barman]);
             const saveTitle = (val) => { setAppTitle(val); localStorage.setItem('appTitle', val); };
 
-            // UPDATED STATS CALCULATION
+            // --- SMART STATS CALCULATION ---
             const stats = useMemo(() => {
                 const s = {}; 
-                const monthPrefix = `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2, '0')}`;
+                const dim = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate();
                 
+                // Initialize stats
                 people.forEach(p => { 
-                    const offCount = p.daysOff.filter(d => d.startsWith(monthPrefix)).length;
-                    s[p.id] = { h: 0, covers: 0, off: offCount }; 
+                    s[p.id] = { h: 0, covers: 0, workedDays: 0 }; 
                 });
 
-                const dim = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate();
+                // Calculate hours and worked days
                 for(let i=1; i<=dim; i++) {
                     const dStr = new Date(currentDate.getFullYear(), currentDate.getMonth(), i).toLocaleDateString('en-CA');
                     const dw = new Date(currentDate.getFullYear(), currentDate.getMonth(), i).getDay();
@@ -257,13 +256,21 @@
                         bms.forEach((bid, idx) => {
                             if(s[bid]) {
                                 let h = 12; if(dw===5 && idx>0) h=7; else if(dw===0 && idx>0) h=6;
-                                s[bid].h += h; if(getPerson(bid)?.role==='waiter') s[bid].covers++;
+                                s[bid].h += h; 
+                                s[bid].workedDays++;
+                                if(getPerson(bid)?.role==='waiter') s[bid].covers++;
                             }
                         });
-                        sh.morning.forEach(id=>{if(s[id]) s[id].h+=10});
-                        sh.evening.forEach(id=>{if(s[id]) s[id].h+=12});
+                        sh.morning.forEach(id=>{if(s[id]) { s[id].h+=10; s[id].workedDays++; }});
+                        sh.evening.forEach(id=>{if(s[id]) { s[id].h+=12; s[id].workedDays++; }});
                     }
                 }
+                
+                // Calculate True Days Off (Total Days - Worked Days)
+                Object.keys(s).forEach(pid => {
+                    s[pid].off = dim - s[pid].workedDays;
+                });
+
                 return s;
             }, [people, schedule, currentDate]);
 
@@ -381,20 +388,23 @@
             
             const openGenSettings = () => { const h = currentDate.getMonth() >= 4 && currentDate.getMonth() <= 8; setGenTotal(h ? 6 : 4); setGenMorning(h ? 3 : 2); setSettingsTab('gen'); setShowSettings(true); };
             
-            // --- UPDATED COPY TO CLIPBOARD ---
+            // --- COPY WITH FORMATTING ---
             const copyToClipboard = () => {
                 const year = currentDate.getFullYear();
                 const month = currentDate.getMonth();
                 const dim = new Date(year, month + 1, 0).getDate();
+                const monthName = currentDate.toLocaleString('pl-PL', { month: 'long', year: 'numeric' }).toUpperCase();
 
                 // 1. Plain Text (TSV)
-                let tsv = "Data\tBar\tRano\tPopołudnie\n";
+                let tsv = `GRAFIK: ${monthName}\n`;
+                tsv += "Dzień\tBar\tRano\tPopołudnie\n";
 
                 // 2. HTML for formatting
                 let html = `<table border="1" style="border-collapse: collapse; font-family: Arial, sans-serif;">
                     <thead>
+                        <tr><th colspan="4" style="font-size:16px; padding:10px; background-color:#1e293b; color:white;">GRAFIK: ${monthName}</th></tr>
                         <tr style="background-color: #f3f4f6; font-weight: bold;">
-                            <th style="padding: 5px; border: 1px solid #000;">Data</th>
+                            <th style="padding: 5px; border: 1px solid #000;">Dzień</th>
                             <th style="padding: 5px; border: 1px solid #000; background-color: #e0e7ff; color: #312e81;">Bar</th>
                             <th style="padding: 5px; border: 1px solid #000; background-color: #ffedd5; color: #7c2d12;">Rano</th>
                             <th style="padding: 5px; border: 1px solid #000; background-color: #dbeafe; color: #1e3a8a;">Popołudnie</th>
@@ -412,21 +422,22 @@
 
                     // Row Styling
                     let rowBg = "#ffffff";
-                    if (isHol) rowBg = "#fee2e2"; // Light Red
-                    else if (isWknd) rowBg = "#f1f5f9"; // Light Gray
+                    if (isHol) rowBg = "#fee2e2"; 
+                    else if (isWknd) rowBg = "#f1f5f9";
 
                     // Data
-                    const dateStr = `${date.toLocaleDateString('pl-PL')} ${date.toLocaleDateString('pl-PL', {weekday: 'short'})}`;
+                    const dayNum = d;
+                    const weekDay = date.toLocaleDateString('pl-PL', {weekday: 'short'});
                     const barmen = getBarmanArray(s).map(id => getPerson(id)?.name || "").join(", ");
                     const morn = s.morning.map(id => getPerson(id)?.name || "").join(", ");
                     const eve = s.evening.map(id => getPerson(id)?.name || "").join(", ");
 
                     // Build TSV
-                    tsv += `${dateStr}\t${barmen}\t${morn}\t${eve}\n`;
+                    tsv += `${dayNum} ${weekDay}\t${barmen}\t${morn}\t${eve}\n`;
 
-                    // Build HTML with explicit borders
+                    // Build HTML
                     html += `<tr style="background-color: ${rowBg};">
-                        <td style="padding: 5px; border: 1px solid #000;">${dateStr} ${isHol ? '★' : ''}</td>
+                        <td style="padding: 5px; border: 1px solid #000; white-space:nowrap;"><b>${dayNum}</b> <span style="color:#666;">${weekDay}</span> ${isHol ? '★' : ''}</td>
                         <td style="padding: 5px; border: 1px solid #000; color: #312e81;">${barmen}</td>
                         <td style="padding: 5px; border: 1px solid #000; color: #7c2d12;">${morn}</td>
                         <td style="padding: 5px; border: 1px solid #000; color: #1e3a8a;">${eve}</td>
@@ -435,25 +446,32 @@
 
                 // --- DETAILED REPORT SECTION ---
                 html += `<tr><td colspan="4" style="border:none; height:20px;"></td></tr>
-                         <tr><td colspan="4" style="font-weight:bold; font-size:14px; border:1px solid #000; background-color:#f3f4f6;">RAPORT MIESIĘCZNY:</td></tr>
-                         <tr style="font-weight:bold; background-color:#e5e7eb;">
-                            <td style="border:1px solid #000;">Pracownik</td>
-                            <td style="border:1px solid #000;">Godziny</td>
-                            <td style="border:1px solid #000;">Dni Wolne</td>
-                            <td style="border:1px solid #000;">Dodatkowe</td>
-                         </tr>`;
+                         <tr><td colspan="4" style="font-weight:bold; font-size:14px; border:1px solid #000; background-color:#f3f4f6; padding:5px;">RAPORT MIESIĘCZNY:</td></tr>`;
                 
-                people.filter(p => !p.archived).forEach(p => {
-                    const s = stats[p.id] || { h: 0, covers: 0, off: 0 };
-                    const barText = (p.role === 'waiter' && s.covers > 0) ? `Bar: ${s.covers}` : "";
-                    
-                    html += `<tr>
-                        <td style="border:1px solid #000;">${p.name}</td>
-                        <td style="border:1px solid #000; color:#1d4ed8; font-weight:bold;">${s.h}h</td>
-                        <td style="border:1px solid #000; color:#dc2626; font-weight:bold;">${s.off}</td>
-                        <td style="border:1px solid #000; color:#d97706;">${barText}</td>
-                    </tr>`;
-                });
+                // 1. Barmani
+                const barmen = people.filter(p => !p.archived && p.role === 'bartender');
+                if (barmen.length > 0) {
+                    html += `<tr><td colspan="4" style="font-weight:bold; background-color:#e0e7ff; border:1px solid #000; padding:3px;">BARMANI</td></tr>`;
+                    barmen.forEach(p => {
+                        const s = stats[p.id] || { h: 0, covers: 0, off: 0 };
+                        html += `<tr><td colspan="4" style="border:1px solid #000; padding:2px;">
+                            <b>${p.name}</b>: <span style="color:#1d4ed8;">${s.h}h</span> | <span style="color:#dc2626;">Wolne: ${s.off}</span>
+                        </td></tr>`;
+                    });
+                }
+
+                // 2. Obsługa
+                const waiters = people.filter(p => !p.archived && p.role === 'waiter');
+                if (waiters.length > 0) {
+                    html += `<tr><td colspan="4" style="font-weight:bold; background-color:#ffedd5; border:1px solid #000; padding:3px;">OBSŁUGA</td></tr>`;
+                    waiters.forEach(p => {
+                        const s = stats[p.id] || { h: 0, covers: 0, off: 0 };
+                        const barInfo = s.covers > 0 ? ` | <span style="color:#d97706;">Bar: ${s.covers}</span>` : "";
+                        html += `<tr><td colspan="4" style="border:1px solid #000; padding:2px;">
+                            <b>${p.name}</b>: <span style="color:#1d4ed8;">${s.h}h</span> | <span style="color:#dc2626;">Wolne: ${s.off}</span>${barInfo}
+                        </td></tr>`;
+                    });
+                }
                 
                 html += `</tbody></table>`;
 
@@ -467,10 +485,7 @@
                     });
                     navigator.clipboard.write([item]).then(
                         () => alert(TEXT.copySuccess),
-                        (err) => {
-                            console.error("Clipboard write failed", err);
-                            navigator.clipboard.writeText(tsv).then(() => alert(TEXT.copySuccess));
-                        }
+                        (err) => navigator.clipboard.writeText(tsv).then(() => alert(TEXT.copySuccess))
                     );
                 } catch (e) {
                      navigator.clipboard.writeText(tsv).then(() => alert(TEXT.copySuccess));
@@ -950,7 +965,7 @@
                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
                         <div className="text-center mb-8">
                             <h1 className="text-3xl font-bold tracking-tighter mb-1">KUTER</h1>
-                            <p className="text-muted text-sm uppercase tracking-widest">System v0.0.4</p>
+                            <p className="text-muted text-sm uppercase tracking-widest">System v0.0.5</p>
                         </div>
                         <form onSubmit={handle} className="space-y-4">
                             <div>
