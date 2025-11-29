@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUTER - System Grafik v0.0.7</title>
+    <title>KUTER - System Grafik v0.0.7 (Fixed)</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -29,19 +28,15 @@
         }
     </script>
     
-    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     
-    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Firebase (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
-    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
@@ -60,7 +55,6 @@
 <body>
     <div id="root"></div>
 
-    <!-- Error Handler -->
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             const errDiv = document.createElement('div');
@@ -68,7 +62,7 @@
             errDiv.innerHTML = '<h3 style="margin-top:0">CRITICAL ERROR</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("--- KUTER SYSTEM v0.0.7 LOADED ---");
+        console.log("--- KUTER SYSTEM v0.0.7 FIXED LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -136,7 +130,7 @@
             cleanSub: "To usunie trwale wszystkich archiwalnych pracowników.",
             cleanBtn: "Usuń Trwale",
             headerName: "Nazwa Lokalu",
-            errorAuth: "Błąd danych.",
+            errorAuth: "Błąd данных.",
             copySuccess: "Skopiowano! Wklej (Ctrl+V) w Excelu lub Google Sheets.",
             optimizing: "Przeliczanie...",
             resAddBtn: "+ Nowa Rezerwacja",
@@ -233,7 +227,16 @@
             const getPerson = (id) => people.find(p => p.id === id);
             const getUserRef = () => `artifacts/${firebaseConfig.projectId}/users/${user.uid}`;
             const getMonthName = (d) => d.toLocaleString('pl-PL', { month: 'long', year: 'numeric' });
-            const changeMonth = (d) => { const n = new Date(currentDate); n.setMonth(n.getMonth()+d); setCurrentDate(n); };
+            
+            // --- FIX APPLIED HERE ---
+            const changeMonth = (d) => { 
+                const n = new Date(currentDate); 
+                n.setDate(1); // RESET TO 1st OF MONTH TO AVOID OVERFLOW
+                n.setMonth(n.getMonth() + d); 
+                setCurrentDate(n); 
+            };
+            // ------------------------
+
             const getBarmanArray = (s) => (!s || !s.barman) ? [] : (Array.isArray(s.barman) ? s.barman : [s.barman]);
             const saveTitle = (val) => { setAppTitle(val); localStorage.setItem('appTitle', val); };
 
@@ -379,8 +382,9 @@
             };
 
             const runGenerator = async (opt) => {
-                if(!genSettings) return;
-                const { total, morning } = genSettings;
+                if(!genTotal || !genMorning) return; // FIX: use state variables directly
+                const total = genTotal;
+                const morning = genMorning;
                 if (opt) {
                     setIsOptimizing(true);
                     setTimeout(async () => {
@@ -944,7 +948,8 @@
                                                 onClick={()=>{ addToShift(addingToSlot.date, addingToSlot.type, p.id); }} 
                                                 className={`w-full text-left px-4 py-3 rounded-xl flex justify-between items-center transition border border-transparent
                                                     ${isOff ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface2 hover:border-surface2'}
-                                                `}>
+                                                `}
+                                            >
                                                 <div>
                                                     <div className="font-bold text-white flex items-center gap-2">
                                                         {p.name} 
