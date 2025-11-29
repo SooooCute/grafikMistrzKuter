@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>System Zarządzania 0.0.9</title>
+    <title>KUTER - System v0.0.11</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -70,7 +70,7 @@
             errDiv.innerHTML = '<h3 style="margin-top:0">CRITICAL ERROR</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("---  System Zarządzania v0.0.9  ---");
+        console.log("--- KUTER SYSTEM v0.0.11 FIXED LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -100,7 +100,7 @@
         // --- TEXTS ---
         const TEXT = {
             defaultAppName: "KUTER",
-            appSub: "System v0.0.9",
+            appSub: "System v0.0.11",
             tabStaff: "Zespół",
             tabCalendar: "Grafik",
             tabStats: "Raporty",
@@ -184,6 +184,67 @@
             );
         }
 
+        // --- MOVED AUTH SCREEN UP HERE TO FIX REFERENCE ERROR ---
+        function AuthScreen() {
+            const [isReg, setIsReg] = useState(false);
+            const [email, setEmail] = useState('');
+            const [pass, setPass] = useState('');
+            const [err, setErr] = useState('');
+            const [busy, setBusy] = useState(false);
+
+            const handle = async (e) => {
+                e.preventDefault(); setBusy(true); setErr('');
+                try {
+                    if(isReg) await auth.createUserWithEmailAndPassword(email, pass);
+                    else await auth.signInWithEmailAndPassword(email, pass);
+                } catch(e) { console.error(e); setErr("Błąd logowania. Sprawdź dane."); setBusy(false); }
+            };
+
+            return (
+                <div className="min-h-screen bg-bg flex items-center justify-center p-4 font-sans text-white relative overflow-hidden">
+                    {/* Картинка на фоне */}
+                    <div className="absolute inset-0 z-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center"></div>
+                    
+                    {/* Основной контейнер формы */}
+                    <div className="bg-surface/90 backdrop-blur-xl border border-surface2 p-8 rounded-3xl shadow-2xl w-full max-w-md relative z-10">
+                        {/* Заголовок и подзаголовок */}
+                        <div className="text-center mb-8">
+                            <h1 className="text-4xl font-black tracking-tighter mb-2 bg-gradient-to-r from-blue-400 to-indigo-600 bg-clip-text text-transparent">KUTER</h1>
+                            <p className="text-muted text-xs uppercase tracking-[0.3em]">System Zarządzania v0.0.11</p>
+                        </div>
+                        
+                        {/* Форма входа */}
+                        <form onSubmit={handle} className="space-y-4">
+                            <div>
+                                <label className="text-[10px] font-bold text-muted uppercase mb-1 block pl-1">Email</label>
+                                <input type="email" required className="w-full bg-bg/50 border border-surface2 p-3.5 rounded-xl focus:border-accent focus:ring-1 focus:ring-accent outline-none transition text-sm" value={email} onChange={e=>setEmail(e.target.value)} placeholder="login@kuter.pl" />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-muted uppercase mb-1 block pl-1">Hasło</label>
+                                <input type="password" required className="w-full bg-bg/50 border border-surface2 p-3.5 rounded-xl focus:border-accent focus:ring-1 focus:ring-accent outline-none transition text-sm" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" />
+                            </div>
+                            
+                            {/* Сообщение об ошибке */}
+                            {err && <div className="text-danger text-xs bg-red-900/10 p-3 rounded-lg border border-red-900/30 text-center font-medium animate-pulse">{err}</div>}
+                            
+                            {/* Кнопка входа */}
+                            <button disabled={busy} className="w-full bg-accent hover:bg-accentHover text-white py-3.5 rounded-xl font-bold transition shadow-lg shadow-blue-900/20 mt-4 disabled:opacity-50 disabled:cursor-not-allowed">
+                                {busy ? <span className="inline-block animate-spin mr-2">⟳</span> : null}
+                                {busy ? 'Przetwarzanie...' : isReg ? "Zarejestruj się" : "Zaloguj się"}
+                            </button>
+                        </form>
+                        
+                        {/* Переключатель Вход/Регистрация */}
+                        <div className="mt-8 text-center border-t border-surface2 pt-6">
+                            <button onClick={()=>setIsReg(!isReg)} className="text-xs text-muted hover:text-white transition underline decoration-dotted underline-offset-4">
+                                {isReg ? "Masz już konto? Zaloguj się" : "Nie masz konta? Utwórz je"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         // --- APP COMPONENT ---
         function App() {
             const [user, setUser] = useState(null);
@@ -197,7 +258,10 @@
             const [currentDate, setCurrentDate] = useState(new Date());
             const [loading, setLoading] = useState(true);
             const [menuOpen, setMenuOpen] = useState(false);
+            
+            // --- STATE: APP TITLE & LOGO ---
             const [appTitle, setAppTitle] = useState(localStorage.getItem('appTitle') || TEXT.defaultAppName);
+            const [appLogo, setAppLogo] = useState(localStorage.getItem('appLogo') || 'logo.jpg');
             
             const [newName, setNewName] = useState('');
             const [newGender, setNewGender] = useState('male');
@@ -236,56 +300,42 @@
             const getUserRef = () => `artifacts/${firebaseConfig.projectId}/users/${user.uid}`;
             const getMonthName = (d) => d.toLocaleString('pl-PL', { month: 'long', year: 'numeric' });
             
-            // --- FIX APPLIED HERE ---
             const changeMonth = (d) => { 
                 const n = new Date(currentDate); 
                 n.setDate(1); 
                 n.setMonth(n.getMonth() + d); 
                 setCurrentDate(n); 
             };
-            // ------------------------
 
             const getBarmanArray = (s) => (!s || !s.barman) ? [] : (Array.isArray(s.barman) ? s.barman : [s.barman]);
             const saveTitle = (val) => { setAppTitle(val); localStorage.setItem('appTitle', val); };
+            const saveLogo = (val) => { setAppLogo(val); localStorage.setItem('appLogo', val); };
 
-            // --- SMART STATS CALCULATION (Real Presence) ---
+            // --- SMART STATS CALCULATION ---
             const stats = useMemo(() => {
                 const s = {}; 
                 const dim = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate();
-                
-                people.forEach(p => { 
-                    s[p.id] = { h: 0, covers: 0, workedDays: 0 }; 
-                });
-
+                people.forEach(p => { s[p.id] = { h: 0, covers: 0, workedDays: 0 }; });
                 for(let i=1; i<=dim; i++) {
                     const dStr = new Date(currentDate.getFullYear(), currentDate.getMonth(), i).toLocaleDateString('en-CA');
                     const dw = new Date(currentDate.getFullYear(), currentDate.getMonth(), i).getDay();
                     const sh = schedule[dStr];
                     if(sh) {
                         const workersToday = new Set();
-                        
                         const bms = getBarmanArray(sh);
                         bms.forEach((bid, idx) => {
                             if(s[bid]) {
                                 let h = 12; if(dw===5 && idx>0) h=7; else if(dw===0 && idx>0) h=6;
-                                s[bid].h += h; 
-                                workersToday.add(bid);
+                                s[bid].h += h; workersToday.add(bid);
                                 if(getPerson(bid)?.role==='waiter') s[bid].covers++;
                             }
                         });
                         sh.morning.forEach(id=>{ if(s[id]) { s[id].h+=10; workersToday.add(id); }});
                         sh.evening.forEach(id=>{ if(s[id]) { s[id].h+=12; workersToday.add(id); }});
-                        
-                        workersToday.forEach(pid => {
-                            if (s[pid]) s[pid].workedDays++;
-                        });
+                        workersToday.forEach(pid => { if (s[pid]) s[pid].workedDays++; });
                     }
                 }
-                
-                Object.keys(s).forEach(pid => {
-                    s[pid].off = dim - s[pid].workedDays;
-                });
-
+                Object.keys(s).forEach(pid => { s[pid].off = dim - s[pid].workedDays; });
                 return s;
             }, [people, schedule, currentDate]);
 
@@ -411,11 +461,9 @@
                 const dim = new Date(year, month + 1, 0).getDate();
                 const monthName = currentDate.toLocaleString('pl-PL', { month: 'long', year: 'numeric' }).toUpperCase();
 
-                // 1. Plain Text (TSV) - Keeping this for Excel paste compatibility without formatting
                 let tsv = `GRAFIK: ${monthName}\n`;
                 tsv += "Dzień\tDzień tyg.\tBar\tRano\tPopołudnie\n";
 
-                // 2. HTML Table Construction (with user requested styles)
                 let html = `
                     <table border="1" style="font-family: Arial, sans-serif; border-collapse: collapse; width: 100%;">
                         <thead>
@@ -441,22 +489,18 @@
                     const isHol = holidays.includes(ds);
                     const isWknd = [0, 6].includes(date.getDay());
 
-                    // Data
                     const dayNum = d;
                     const weekDay = date.toLocaleDateString('pl-PL', {weekday: 'short'});
                     const barmen = getBarmanArray(s).map(id => getPerson(id)?.name || "").join(", ");
                     const morn = s.morning.map(id => getPerson(id)?.name || "").join(", ");
                     const eve = s.evening.map(id => getPerson(id)?.name || "").join(", ");
 
-                    // Build TSV
                     tsv += `${dayNum}\t${weekDay}\t${barmen}\t${morn}\t${eve}\n`;
 
-                    // Row Styling
                     let rowBg = "#ffffff";
                     if (isHol) rowBg = "#fee2e2"; 
                     else if (isWknd) rowBg = "#f3f4f6";
 
-                    // Build HTML Rows
                     html += `<tr style="background-color: ${rowBg};">
                         <td style="padding: 5px; border: 1px solid #999; text-align:center;"><b>${dayNum}</b> ${isHol ? '★' : ''}</td>
                         <td style="padding: 5px; border: 1px solid #999; text-align:center;">${weekDay}</td>
@@ -468,7 +512,6 @@
                 
                 html += `</tbody></table><br/><br/>`;
 
-                // Report Section
                 html += `
                     <table border="1" style="font-family: Arial, sans-serif; border-collapse: collapse; width: 100%; margin-top: 20px;">
                      <thead>
@@ -477,7 +520,6 @@
                      <tbody>
                 `;
                 
-                // 1. Barmani
                 const barmenList = people.filter(p => !p.archived && p.role === 'bartender');
                 if (barmenList.length > 0) {
                     html += `<tr><td colspan="2" style="font-weight:bold; background-color:#dbeafe; border:1px solid #999; padding:5px; color:#1e40af;">BARMANI</td></tr>`;
@@ -490,7 +532,6 @@
                     });
                 }
 
-                // 2. OBSŁUGA
                 const waitersList = people.filter(p => !p.archived && p.role === 'waiter');
                 if (waitersList.length > 0) {
                      html += `<tr><td colspan="2" style="font-weight:bold; background-color:#ffedd5; border:1px solid #999; padding:5px; color:#9a3412;">OBSŁUGA</td></tr>`;
@@ -507,7 +548,6 @@
                 html += `</tbody></table>`;
 
                 const blobHtml = new Blob([html], { type: 'text/html' });
-                // We keep TSV for plain text so pasting in Notepad isn't garbage
                 const blobText = new Blob([tsv], { type: 'text/plain' });
                 
                 try {
@@ -546,9 +586,22 @@
                         <div className={`fixed inset-0 z-50 flex ${menuOpen ? '' : 'pointer-events-none'}`}>
                             <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${menuOpen ? 'opacity-100' : 'opacity-0'}`} onClick={() => setMenuOpen(false)} />
                             <div className={`relative w-72 bg-surface shadow-2xl border-r border-surface2 flex flex-col transform transition-transform duration-300 ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                                <div className="h-24 flex items-center px-6 border-b border-surface2 bg-bg/50">
-                                    <div className="h-10 w-10 bg-surface rounded-full border border-surface2 flex items-center justify-center mr-4 overflow-hidden"><img src="logo.jpg" className="h-full w-full object-cover opacity-80" onError={(e)=>{e.target.style.display='none'}} /></div>
-                                    <h2 className="font-bold text-lg tracking-wide text-white">{appTitle}</h2>
+                                <div className="h-40 flex flex-col items-center justify-center border-b border-surface2 bg-bg/50 relative overflow-hidden">
+                                     {/* Gradient Background for Header */}
+                                     <div className="absolute inset-0 bg-gradient-to-b from-accent/10 to-transparent pointer-events-none"></div>
+
+                                     {/* Logo Container */}
+                                     <div className="relative w-20 h-20 mb-3 group cursor-pointer transition-transform hover:scale-105">
+                                         {/* Glow effect */}
+                                         <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-purple-600 rounded-full blur-lg opacity-40 group-hover:opacity-60 transition duration-500"></div>
+                                         {/* Image */}
+                                         <img
+                                            src={appLogo}
+                                            className="w-full h-full object-cover rounded-full border-2 border-white/10 shadow-2xl relative z-10"
+                                            onError={(e)=>{e.target.src='https://via.placeholder.com/150?text=LOGO'}}
+                                         />
+                                     </div>
+                                     <h2 className="font-black text-xl tracking-wider text-white drop-shadow-md relative z-10">{appTitle}</h2>
                                 </div>
                                 <div className="flex-grow py-6 px-3 space-y-1">
                                     {[{ id: 'staff', label: TEXT.tabStaff, icon: <Icons.Users /> },{ id: 'calendar', label: TEXT.tabCalendar, icon: <Icons.Calendar /> },{ id: 'reservations', label: TEXT.tabReservations, icon: <Icons.Book /> },{ id: 'stats', label: TEXT.tabStats, icon: <Icons.Chart /> }].map(item => (
@@ -814,6 +867,11 @@
                                             <label className="text-xs font-bold text-muted uppercase mb-1 block">{TEXT.headerName}</label>
                                             <input value={appTitle} onChange={e=>saveTitle(e.target.value)} className="w-full bg-bg border border-surface2 rounded-xl p-3 text-white text-sm focus:border-accent outline-none" />
                                         </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-muted uppercase mb-1 block">URL Logo</label>
+                                            <input value={appLogo} onChange={e=>saveLogo(e.target.value)} className="w-full bg-bg border border-surface2 rounded-xl p-3 text-white text-sm focus:border-accent outline-none" placeholder="https://..." />
+                                            <p className="text-[10px] text-muted mt-1">Wklej link do obrazka (np. z Imgur)</p>
+                                        </div>
                                         <div className="pt-4 border-t border-surface2">
                                             {!confirmClean ? (
                                                 <button onClick={()=>setConfirmClean(true)} className="w-full py-3 border border-red-500/50 text-red-400 rounded-xl hover:bg-red-500/10 transition">{TEXT.cleanConfirm}</button>
@@ -992,70 +1050,8 @@
             );
         }
 
-        // --- NEW AUTH SCREEN (v0.0.9) ---
-        function AuthScreen() {
-            const [isReg, setIsReg] = useState(false);
-            const [email, setEmail] = useState('');
-            const [pass, setPass] = useState('');
-            const [err, setErr] = useState('');
-            const [busy, setBusy] = useState(false);
-
-            const handle = async (e) => {
-                e.preventDefault(); setBusy(true); setErr('');
-                try {
-                    if(isReg) await auth.createUserWithEmailAndPassword(email, pass);
-                    else await auth.signInWithEmailAndPassword(email, pass);
-                } catch(e) { console.error(e); setErr("Błąd logowania. Sprawdź dane."); setBusy(false); }
-            };
-
-            return (
-                <div className="min-h-screen bg-bg flex items-center justify-center p-4 font-sans text-white relative overflow-hidden">
-                    {/* Картинка на фоне */}
-                    <div className="absolute inset-0 z-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center"></div>
-                    
-                    {/* Основной контейнер формы */}
-                    <div className="bg-surface/90 backdrop-blur-xl border border-surface2 p-8 rounded-3xl shadow-2xl w-full max-w-md relative z-10">
-                        {/* Заголовок и подзаголовок */}
-                        <div className="text-center mb-8">
-                            <h1 className="text-4xl font-black tracking-tighter mb-2 bg-gradient-to-r from-blue-400 to-indigo-600 bg-clip-text text-transparent">KUTER</h1>
-                            <p className="text-muted text-xs uppercase tracking-[0.3em]">System Zarządzania v0.0.9</p>
-                        </div>
-                        
-                        {/* Форма входа */}
-                        <form onSubmit={handle} className="space-y-4">
-                            <div>
-                                <label className="text-[10px] font-bold text-muted uppercase mb-1 block pl-1">Email</label>
-                                <input type="email" required className="w-full bg-bg/50 border border-surface2 p-3.5 rounded-xl focus:border-accent focus:ring-1 focus:ring-accent outline-none transition text-sm" value={email} onChange={e=>setEmail(e.target.value)} placeholder="login@kuter.pl" />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-muted uppercase mb-1 block pl-1">Hasło</label>
-                                <input type="password" required className="w-full bg-bg/50 border border-surface2 p-3.5 rounded-xl focus:border-accent focus:ring-1 focus:ring-accent outline-none transition text-sm" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" />
-                            </div>
-                            
-                            {/* Сообщение об ошибке */}
-                            {err && <div className="text-danger text-xs bg-red-900/10 p-3 rounded-lg border border-red-900/30 text-center font-medium animate-pulse">{err}</div>}
-                            
-                            {/* Кнопка входа */}
-                            <button disabled={busy} className="w-full bg-accent hover:bg-accentHover text-white py-3.5 rounded-xl font-bold transition shadow-lg shadow-blue-900/20 mt-4 disabled:opacity-50 disabled:cursor-not-allowed">
-                                {busy ? <span className="inline-block animate-spin mr-2">⟳</span> : null}
-                                {busy ? 'Przetwarzanie...' : isReg ? "Zarejestruj się" : "Zaloguj się"}
-                            </button>
-                        </form>
-                        
-                        {/* Переключатель Вход/Регистрация */}
-                        <div className="mt-8 text-center border-t border-surface2 pt-6">
-                            <button onClick={()=>setIsReg(!isReg)} className="text-xs text-muted hover:text-white transition underline decoration-dotted underline-offset-4">
-                                {isReg ? "Masz już konto? Zaloguj się" : "Nie masz konta? Utwórz je"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
 </html>
-
