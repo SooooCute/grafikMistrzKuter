@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUTER - System Grafik v0.0.8</title>
+    <title>KUTER - System Grafik v0.0.9</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -81,8 +81,6 @@
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             console.error("Critical Error:", message, lineno);
-            // Optional: Uncomment to see UI alert on error
-            // alert('Błąd systemu: ' + message);
         };
     </script>
 
@@ -114,7 +112,7 @@
         // --- TEXT CONSTANTS ---
         const TEXT = {
             defaultAppName: "KUTER",
-            appSub: "System v0.0.8",
+            appSub: "System v0.0.9",
             tabStaff: "Zespół",
             tabCalendar: "Grafik",
             tabStats: "Raporty",
@@ -122,7 +120,7 @@
             secWaiters: "Obsługa",
             secBartenders: "Bar",
             addBtn: "Dodaj Pracownika",
-            copySuccess: "Skopiowano do schowka!",
+            copySuccess: "Skopiowano! Wklej (Ctrl+V) w Excelu/Sheets.",
             loading: "Ładowanie danych...",
             months: ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'],
             daysShort: ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb']
@@ -182,7 +180,7 @@
                     <div className="bg-surface/90 backdrop-blur-xl border border-surface2 p-8 rounded-3xl shadow-2xl w-full max-w-md relative z-10">
                         <div className="text-center mb-8">
                             <h1 className="text-4xl font-black tracking-tighter mb-2 bg-gradient-to-r from-blue-400 to-indigo-600 bg-clip-text text-transparent">KUTER</h1>
-                            <p className="text-muted text-xs uppercase tracking-[0.3em]">System Zarządzania v0.0.8</p>
+                            <p className="text-muted text-xs uppercase tracking-[0.3em]">System Zarządzania v0.0.9</p>
                         </div>
                         <form onSubmit={handle} className="space-y-4">
                             <div>
@@ -403,19 +401,97 @@
             
             // Clipboard logic
             const copyToClipboard = () => {
-                // Simplified export logic for brevity - mimics original
                 const y = currentDate.getFullYear(), m = currentDate.getMonth();
                 const dim = new Date(y, m+1, 0).getDate();
-                let tsv = `DATA\tBAR\tRANO\tPOPOŁUDNIE\n`;
+                const monthName = currentDate.toLocaleString('pl-PL', { month: 'long', year: 'numeric' }).toUpperCase();
+                
+                // HTML Table Construction
+                let html = `
+                    <table border="1" style="font-family: Arial, sans-serif; border-collapse: collapse; width: 100%;">
+                        <thead>
+                            <tr style="background-color: #f3f4f6;">
+                                <th colspan="5" style="font-size: 16pt; padding: 10px; text-align: center; border: 1px solid #999;">GRAFIK: ${monthName}</th>
+                            </tr>
+                            <tr style="background-color: #e5e7eb; font-weight: bold;">
+                                <th style="padding: 5px; border: 1px solid #999; width: 50px;">Data</th>
+                                <th style="padding: 5px; border: 1px solid #999; width: 80px;">Dzień</th>
+                                <th style="padding: 5px; border: 1px solid #999; background-color: #dbeafe; color: #1e40af;">Bar</th>
+                                <th style="padding: 5px; border: 1px solid #999; background-color: #ffedd5; color: #9a3412;">Rano</th>
+                                <th style="padding: 5px; border: 1px solid #999; background-color: #e0f2fe; color: #075985;">Popołudnie</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
                 for(let d=1; d<=dim; d++){
-                    const ds = new Date(y, m, d).toLocaleDateString('en-CA');
+                    const dObj = new Date(y, m, d);
+                    const ds = dObj.toLocaleDateString('en-CA');
+                    const dayName = dObj.toLocaleDateString('pl-PL', { weekday: 'long' });
+                    const dayShort = dObj.toLocaleDateString('pl-PL', { weekday: 'short' });
+                    const isWknd = [0, 5, 6].includes(dObj.getDay()); // Fri, Sat, Sun
                     const s = schedule[ds] || {barman:[], morning:[], evening:[]};
                     const b = getBarmanArray(s).map(id=>getPerson(id)?.name).join(', ');
                     const mr = s.morning.map(id=>getPerson(id)?.name).join(', ');
                     const ev = s.evening.map(id=>getPerson(id)?.name).join(', ');
-                    tsv += `${d}\t${b}\t${mr}\t${ev}\n`;
+                    
+                    const rowBg = isWknd ? '#e5e7eb' : '#ffffff';
+
+                    html += `
+                        <tr style="background-color: ${rowBg};">
+                            <td style="padding: 5px; border: 1px solid #ccc; text-align: center; font-weight: bold;">${d}</td>
+                            <td style="padding: 5px; border: 1px solid #ccc;">${dayName}</td>
+                            <td style="padding: 5px; border: 1px solid #ccc; background-color: #eff6ff; color: #1e3a8a;">${b}</td>
+                            <td style="padding: 5px; border: 1px solid #ccc; background-color: #fff7ed; color: #7c2d12;">${mr}</td>
+                            <td style="padding: 5px; border: 1px solid #ccc; background-color: #f0f9ff; color: #0c4a6e;">${ev}</td>
+                        </tr>
+                    `;
                 }
-                navigator.clipboard.writeText(tsv).then(() => alert(TEXT.copySuccess));
+
+                html += `</tbody></table><br/><br/>`;
+                
+                // Report Section
+                html += `
+                    <table border="1" style="font-family: Arial, sans-serif; border-collapse: collapse; width: 100%; margin-top: 20px;">
+                        <thead>
+                            <tr><th colspan="4" style="padding: 8px; background-color: #374151; color: white; text-align: left;">RAPORT MIESIĘCZNY</th></tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                // Bartenders Report
+                html += `<tr><td colspan="4" style="padding: 5px; background-color: #dbeafe; font-weight: bold;">BARMANI</td></tr>`;
+                people.filter(p => !p.archived && p.role === 'bartender').forEach(p => {
+                     const s = stats[p.id] || {h:0, off:0};
+                     html += `<tr>
+                        <td style="padding: 5px; border: 1px solid #ccc;">${p.name}</td>
+                        <td style="padding: 5px; border: 1px solid #ccc;">Godziny: <b>${s.h}h</b></td>
+                        <td style="padding: 5px; border: 1px solid #ccc; color: #dc2626;">Wolne: ${s.off}</td>
+                        <td style="padding: 5px; border: 1px solid #ccc;"></td>
+                     </tr>`;
+                });
+
+                // Waiters Report
+                html += `<tr><td colspan="4" style="padding: 5px; background-color: #ffedd5; font-weight: bold;">OBSŁUGA</td></tr>`;
+                people.filter(p => !p.archived && p.role === 'waiter').forEach(p => {
+                     const s = stats[p.id] || {h:0, off:0, covers:0};
+                     html += `<tr>
+                        <td style="padding: 5px; border: 1px solid #ccc;">${p.name}</td>
+                        <td style="padding: 5px; border: 1px solid #ccc;">Godziny: <b>${s.h}h</b></td>
+                        <td style="padding: 5px; border: 1px solid #ccc; color: #dc2626;">Wolne: ${s.off}</td>
+                        <td style="padding: 5px; border: 1px solid #ccc; color: #d97706;">Bar zmian: ${s.covers}</td>
+                     </tr>`;
+                });
+
+                html += `</tbody></table>`;
+
+                const blob = new Blob([html], { type: 'text/html' });
+                const blobText = new Blob([html], { type: 'text/plain' });
+                const item = new ClipboardItem({ 'text/html': blob, 'text/plain': blobText });
+
+                navigator.clipboard.write([item]).then(() => alert(TEXT.copySuccess)).catch(err => {
+                    console.error(err);
+                    alert("Błąd kopiowania (nieobsługiwane w tej przeglądarce?)");
+                });
             };
 
             if(!isAuthReady) return <div className="flex h-screen items-center justify-center bg-bg text-text"><div className="loader"></div></div>;
@@ -752,6 +828,11 @@
                                         const s = schedule[modals.addToSlot.date];
                                         if(s && (getBarmanArray(s).includes(p.id) || s.morning.includes(p.id) || s.evening.includes(p.id))) return null;
                                         const isOff = p.daysOff.includes(modals.addToSlot.date);
+                                        
+                                        // Calculate Hours Prediction
+                                        const curH = stats[p.id]?.h || 0;
+                                        const estH = modals.addToSlot.type === 'morning' ? 10 : 12;
+                                        
                                         return (
                                             <button key={p.id} disabled={isOff} onClick={async ()=>{
                                                 const dStr = modals.addToSlot.date; const type = modals.addToSlot.type;
@@ -760,8 +841,11 @@
                                                 if(type==='bar'){ const b=getBarmanArray(prevS); ns.barman=[...b,p.id]; } else ns[type]=[...ns[type]||[], p.id];
                                                 await db.doc(`${getUserRef()}/appData/schedule`).set({[dStr]:ns}, {merge:true});
                                                 closeModal('addToSlot');
-                                            }} className={`w-full text-left px-4 py-3 rounded-xl flex justify-between items-center transition ${isOff ? 'opacity-40 grayscale cursor-not-allowed' : 'hover:bg-surface2'}`}>
-                                                <span className="font-bold text-white">{p.name}</span>
+                                            }} className={`w-full text-left px-4 py-3 rounded-xl flex justify-between items-center transition border border-transparent ${isOff ? 'opacity-40 grayscale cursor-not-allowed' : 'hover:bg-surface2 hover:border-surface2'}`}>
+                                                <div>
+                                                    <span className="font-bold text-white block">{p.name}</span>
+                                                    {!isOff && <span className="text-[10px] text-muted">{curH}h <span className="text-accent">→ {curH + estH}h</span></span>}
+                                                </div>
                                                 {isOff && <span className="text-xs text-danger uppercase font-bold">Wolne</span>}
                                             </button>
                                         )
