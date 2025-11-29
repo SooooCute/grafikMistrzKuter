@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUTER - System v0.0.9</title>
+    <title>KUTER - System v0.0.9 (Styled)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,11 +17,11 @@
                         surface: '#1e293b', 
                         surface2: '#334155', 
                         accent: '#3b82f6',
-                        accentHover: '#2563eb', // Добавлено для твоей новой формы
+                        accentHover: '#2563eb',
                         text: '#e2e8f0',    
                         muted: '#94a3b8',   
                         weekend: '#475569', 
-                        danger: '#ef4444',      // Добавлено для ошибок
+                        danger: '#ef4444',
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -70,7 +70,7 @@
             errDiv.innerHTML = '<h3 style="margin-top:0">CRITICAL ERROR</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("--- KUTER SYSTEM v0.0.9 LOADED ---");
+        console.log("--- KUTER SYSTEM v0.0.9 STYLED LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -138,7 +138,7 @@
             cleanSub: "To usunie trwale wszystkich archiwalnych pracowników.",
             cleanBtn: "Usuń Trwale",
             headerName: "Nazwa Lokalu",
-            errorAuth: "Błąd данных.",
+            errorAuth: "Błąd danych.",
             copySuccess: "Skopiowano! Wklej (Ctrl+V) w Excelu lub Google Sheets.",
             optimizing: "Przeliczanie...",
             resAddBtn: "+ Nowa Rezerwacja",
@@ -404,30 +404,34 @@
             
             const openGenSettings = () => { const h = currentDate.getMonth() >= 4 && currentDate.getMonth() <= 8; setGenTotal(h ? 6 : 4); setGenMorning(h ? 3 : 2); setSettingsTab('gen'); setShowSettings(true); };
             
-            // --- COPY WITH SEPARATED PRO REPORT ---
+            // --- NEW CLIPBOARD LOGIC WITH UPDATED STYLES ---
             const copyToClipboard = () => {
                 const year = currentDate.getFullYear();
                 const month = currentDate.getMonth();
                 const dim = new Date(year, month + 1, 0).getDate();
                 const monthName = currentDate.toLocaleString('pl-PL', { month: 'long', year: 'numeric' }).toUpperCase();
 
-                // 1. Plain Text (TSV)
+                // 1. Plain Text (TSV) - Keeping this for Excel paste compatibility without formatting
                 let tsv = `GRAFIK: ${monthName}\n`;
                 tsv += "Dzień\tDzień tyg.\tBar\tRano\tPopołudnie\n";
 
-                // 2. HTML for formatting
-                let html = `<table border="1" style="border-collapse: collapse; font-family: Arial, sans-serif;">
-                    <thead>
-                        <tr><th colspan="5" style="font-size:16px; padding:10px; background-color:#1e293b; color:white;">GRAFIK: ${monthName}</th></tr>
-                        <tr style="background-color: #f3f4f6; font-weight: bold;">
-                            <th style="padding: 5px; border: 1px solid #000;">Dzień</th>
-                            <th style="padding: 5px; border: 1px solid #000;">Dzień tyg.</th>
-                            <th style="padding: 5px; border: 1px solid #000; background-color: #e0e7ff; color: #312e81;">Bar</th>
-                            <th style="padding: 5px; border: 1px solid #000; background-color: #ffedd5; color: #7c2d12;">Rano</th>
-                            <th style="padding: 5px; border: 1px solid #000; background-color: #dbeafe; color: #1e3a8a;">Popołudnie</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
+                // 2. HTML Table Construction (with user requested styles)
+                let html = `
+                    <table border="1" style="font-family: Arial, sans-serif; border-collapse: collapse; width: 100%;">
+                        <thead>
+                            <tr style="background-color: #f3f4f6;">
+                                <th colspan="5" style="font-size: 16pt; padding: 10px; text-align: center; border: 1px solid #999;">GRAFIK: ${monthName}</th>
+                            </tr>
+                            <tr style="background-color: #e5e7eb; font-weight: bold;">
+                                <th style="padding: 5px; border: 1px solid #999; width: 50px;">Data</th>
+                                <th style="padding: 5px; border: 1px solid #999; width: 80px;">Dzień</th>
+                                <th style="padding: 5px; border: 1px solid #999; background-color: #dbeafe; color: #1e40af;">Bar</th>
+                                <th style="padding: 5px; border: 1px solid #999; background-color: #ffedd5; color: #9a3412;">Rano</th>
+                                <th style="padding: 5px; border: 1px solid #999; background-color: #e0f2fe; color: #075985;">Popołudnie</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
 
                 for (let d = 1; d <= dim; d++) {
                     const date = new Date(year, month, d);
@@ -436,11 +440,6 @@
                     
                     const isHol = holidays.includes(ds);
                     const isWknd = [0, 6].includes(date.getDay());
-
-                    // Row Styling
-                    let rowBg = "#ffffff";
-                    if (isHol) rowBg = "#fee2e2"; 
-                    else if (isWknd) rowBg = "#f1f5f9";
 
                     // Data
                     const dayNum = d;
@@ -452,57 +451,64 @@
                     // Build TSV
                     tsv += `${dayNum}\t${weekDay}\t${barmen}\t${morn}\t${eve}\n`;
 
-                    // Build HTML
+                    // Row Styling
+                    let rowBg = "#ffffff";
+                    if (isHol) rowBg = "#fee2e2"; 
+                    else if (isWknd) rowBg = "#f3f4f6";
+
+                    // Build HTML Rows
                     html += `<tr style="background-color: ${rowBg};">
-                        <td style="padding: 5px; border: 1px solid #000; text-align:center;"><b>${dayNum}</b> ${isHol ? '★' : ''}</td>
-                        <td style="padding: 5px; border: 1px solid #000; text-align:center;">${weekDay}</td>
-                        <td style="padding: 5px; border: 1px solid #000; color: #312e81;">${barmen}</td>
-                        <td style="padding: 5px; border: 1px solid #000; color: #7c2d12;">${morn}</td>
-                        <td style="padding: 5px; border: 1px solid #000; color: #1e3a8a;">${eve}</td>
+                        <td style="padding: 5px; border: 1px solid #999; text-align:center;"><b>${dayNum}</b> ${isHol ? '★' : ''}</td>
+                        <td style="padding: 5px; border: 1px solid #999; text-align:center;">${weekDay}</td>
+                        <td style="padding: 5px; border: 1px solid #999; color: #1e40af;">${barmen}</td>
+                        <td style="padding: 5px; border: 1px solid #999; color: #9a3412;">${morn}</td>
+                        <td style="padding: 5px; border: 1px solid #999; color: #075985;">${eve}</td>
                     </tr>`;
                 }
+                
+                html += `</tbody></table><br/><br/>`;
 
-                // --- DETAILED REPORT SECTION (SEPARATED) ---
-                html += `<tr><td colspan="5" style="border:none; height:20px;"></td></tr>
-                         <tr><td colspan="5" style="font-weight:bold; font-size:14px; border:1px solid #000; background-color:#f3f4f6; padding:5px;">RAPORT MIESIĘCZNY:</td></tr>`;
+                // Report Section
+                html += `
+                    <table border="1" style="font-family: Arial, sans-serif; border-collapse: collapse; width: 100%; margin-top: 20px;">
+                     <thead>
+                         <tr style="background-color: #e5e7eb;"><th colspan="2" style="padding: 10px; border: 1px solid #999; font-weight:bold;">RAPORT MIESIĘCZNY</th></tr>
+                     </thead>
+                     <tbody>
+                `;
                 
                 // 1. Barmani
                 const barmenList = people.filter(p => !p.archived && p.role === 'bartender');
                 if (barmenList.length > 0) {
-                    html += `<tr><td colspan="5" style="font-weight:bold; background-color:#e0e7ff; border:1px solid #000; padding:5px; color:#312e81;">BARMANI</td></tr>`;
+                    html += `<tr><td colspan="2" style="font-weight:bold; background-color:#dbeafe; border:1px solid #999; padding:5px; color:#1e40af;">BARMANI</td></tr>`;
                     barmenList.forEach(p => {
                         const s = stats[p.id] || { h: 0, covers: 0, off: 0 };
-                        html += `<tr><td colspan="5" style="border:1px solid #000; padding:2px 5px;">
-                            <b>${p.name}</b>: <span style="color:#1d4ed8; font-weight:bold;">${s.h}h</span> | <span style="color:#dc2626;">Wolne: ${s.off}</span>
-                        </td></tr>`;
+                        html += `<tr>
+                            <td style="border:1px solid #999; padding:5px; width:50%;"><b>${p.name}</b></td>
+                            <td style="border:1px solid #999; padding:5px;"><span style="color:#1d4ed8; font-weight:bold;">${s.h}h</span> | <span style="color:#dc2626;">Wolne: ${s.off}</span></td>
+                        </tr>`;
                     });
-                } else {
-                     html += `<tr><td colspan="5" style="border:1px solid #000; padding:2px 5px;">Brak barmanów</td></tr>`;
                 }
 
-                // Spacer
-                 html += `<tr><td colspan="5" style="border:none; height:10px;"></td></tr>`;
-
-                // 2. OBSŁUGA Header
-                html += `<tr><td colspan="5" style="font-weight:bold; font-size:14px; border:1px solid #000; background-color:#ffedd5; color:#7c2d12; padding:5px;">RAPORT: OBSŁUGA</td></tr>`;
-                
+                // 2. OBSŁUGA
                 const waitersList = people.filter(p => !p.archived && p.role === 'waiter');
                 if (waitersList.length > 0) {
+                     html += `<tr><td colspan="2" style="font-weight:bold; background-color:#ffedd5; border:1px solid #999; padding:5px; color:#9a3412;">OBSŁUGA</td></tr>`;
                     waitersList.forEach(p => {
                         const s = stats[p.id] || { h: 0, covers: 0, off: 0 };
                         const barInfo = s.covers > 0 ? ` | <span style="color:#d97706; font-weight:bold;">Bar: ${s.covers}</span>` : "";
-                        html += `<tr><td colspan="5" style="border:1px solid #000; padding:2px 5px;">
-                            <b>${p.name}</b>: <span style="color:#1d4ed8; font-weight:bold;">${s.h}h</span> | <span style="color:#dc2626;">Wolne: ${s.off}</span>${barInfo}
-                        </td></tr>`;
+                        html += `<tr>
+                            <td style="border:1px solid #999; padding:5px; width:50%;"><b>${p.name}</b></td>
+                            <td style="border:1px solid #999; padding:5px;"><span style="color:#1d4ed8; font-weight:bold;">${s.h}h</span> | <span style="color:#dc2626;">Wolne: ${s.off}</span>${barInfo}</td>
+                        </tr>`;
                     });
-                } else {
-                    html += `<tr><td colspan="5" style="border:1px solid #000; padding:2px 5px;">Brak obsługi</td></tr>`;
                 }
                 
                 html += `</tbody></table>`;
 
-                const blobText = new Blob([tsv], { type: 'text/plain' });
                 const blobHtml = new Blob([html], { type: 'text/html' });
+                // We keep TSV for plain text so pasting in Notepad isn't garbage
+                const blobText = new Blob([tsv], { type: 'text/plain' });
                 
                 try {
                     const item = new ClipboardItem({ 
