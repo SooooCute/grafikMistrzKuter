@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUTER - System v0.0.12</title>
+    <title>KUTER - System v0.0.13</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -57,6 +57,11 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Stripes pattern for occupied tables */
+        .occupied-pattern {
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.05) 5px, rgba(255,255,255,0.05) 10px);
+        }
     </style>
 </head>
 <body>
@@ -70,7 +75,7 @@
             errDiv.innerHTML = '<h3 style="margin-top:0">CRITICAL ERROR</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("--- KUTER SYSTEM v0.0.12 LOADED ---");
+        console.log("--- KUTER SYSTEM v0.0.13 LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -100,7 +105,7 @@
         // --- TEXTS ---
         const TEXT = {
             defaultAppName: "KUTER",
-            appSub: "System v0.0.12",
+            appSub: "System v0.0.13",
             tabStaff: "Zespół",
             tabCalendar: "Grafik",
             tabStats: "Raporty",
@@ -138,7 +143,7 @@
             cleanSub: "To usunie trwale wszystkich archiwalnych pracowników.",
             cleanBtn: "Usuń Trwale",
             headerName: "Nazwa Lokalu",
-            errorAuth: "Błąd данных.",
+            errorAuth: "Błąd danych.",
             copySuccess: "Skopiowano! Wklej (Ctrl+V) w Excelu lub Google Sheets.",
             optimizing: "Przeliczanie...",
             resAddBtn: "+ Nowa Rezerwacja",
@@ -184,7 +189,7 @@
             );
         }
 
-        // --- MOVED AUTH SCREEN UP HERE TO FIX REFERENCE ERROR ---
+        // --- AUTH SCREEN ---
         function AuthScreen() {
             const [isReg, setIsReg] = useState(false);
             const [email, setEmail] = useState('');
@@ -202,18 +207,12 @@
 
             return (
                 <div className="min-h-screen bg-bg flex items-center justify-center p-4 font-sans text-white relative overflow-hidden">
-                    {/* Картинка на фоне */}
                     <div className="absolute inset-0 z-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center"></div>
-                    
-                    {/* Основной контейнер формы */}
                     <div className="bg-surface/90 backdrop-blur-xl border border-surface2 p-8 rounded-3xl shadow-2xl w-full max-w-md relative z-10">
-                        {/* Заголовок и подзаголовок */}
                         <div className="text-center mb-8">
                             <h1 className="text-4xl font-black tracking-tighter mb-2 bg-gradient-to-r from-blue-400 to-indigo-600 bg-clip-text text-transparent">KUTER</h1>
-                            <p className="text-muted text-xs uppercase tracking-[0.3em]">System Zarządzania v0.0.12</p>
+                            <p className="text-muted text-xs uppercase tracking-[0.3em]">System Zarządzania v0.0.13</p>
                         </div>
-                        
-                        {/* Форма входа */}
                         <form onSubmit={handle} className="space-y-4">
                             <div>
                                 <label className="text-[10px] font-bold text-muted uppercase mb-1 block pl-1">Email</label>
@@ -223,18 +222,12 @@
                                 <label className="text-[10px] font-bold text-muted uppercase mb-1 block pl-1">Hasło</label>
                                 <input type="password" required className="w-full bg-bg/50 border border-surface2 p-3.5 rounded-xl focus:border-accent focus:ring-1 focus:ring-accent outline-none transition text-sm" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" />
                             </div>
-                            
-                            {/* Сообщение об ошибке */}
                             {err && <div className="text-danger text-xs bg-red-900/10 p-3 rounded-lg border border-red-900/30 text-center font-medium animate-pulse">{err}</div>}
-                            
-                            {/* Кнопка входа */}
                             <button disabled={busy} className="w-full bg-accent hover:bg-accentHover text-white py-3.5 rounded-xl font-bold transition shadow-lg shadow-blue-900/20 mt-4 disabled:opacity-50 disabled:cursor-not-allowed">
                                 {busy ? <span className="inline-block animate-spin mr-2">⟳</span> : null}
                                 {busy ? 'Przetwarzanie...' : isReg ? "Zarejestruj się" : "Zaloguj się"}
                             </button>
                         </form>
-                        
-                        {/* Переключатель Вход/Регистрация */}
                         <div className="mt-8 text-center border-t border-surface2 pt-6">
                             <button onClick={()=>setIsReg(!isReg)} className="text-xs text-muted hover:text-white transition underline decoration-dotted underline-offset-4">
                                 {isReg ? "Masz już konto? Zaloguj się" : "Nie masz konta? Utwórz je"}
@@ -259,9 +252,11 @@
             const [loading, setLoading] = useState(true);
             const [menuOpen, setMenuOpen] = useState(false);
             
-            // --- STATE: APP TITLE & LOGO ---
+            // --- STATE: APP CONFIG ---
             const [appTitle, setAppTitle] = useState(localStorage.getItem('appTitle') || TEXT.defaultAppName);
             const [appLogo, setAppLogo] = useState(localStorage.getItem('appLogo') || 'logo.jpg');
+            // Default table list
+            const [tablesConfig, setTablesConfig] = useState(localStorage.getItem('tablesConfig') || '1, 2, 3, 4, 5, 6, 7, 8, 9, 10, VIP, Taras');
             
             const [newName, setNewName] = useState('');
             const [newGender, setNewGender] = useState('male');
@@ -293,6 +288,11 @@
                 const u2 = db.doc(`${r}/appData/schedule`).onSnapshot(s => setSchedule(s.data()||{}));
                 const u3 = db.doc(`${r}/appData/holidays`).onSnapshot(s => setHolidays(s.data()?.dates||[]));
                 const u4 = db.doc(`${r}/appData/reservations`).onSnapshot(s => { setReservations(s.data()||{}); setLoading(false); });
+                
+                // Load Settings from Firestore (optional sync, or just stick to localStorage/doc)
+                // For simplicity, we are using localStorage for tablesConfig now, 
+                // but you could sync it with DB too.
+                
                 return () => { u1(); u2(); u3(); u4(); };
             }, [user]);
 
@@ -310,6 +310,7 @@
             const getBarmanArray = (s) => (!s || !s.barman) ? [] : (Array.isArray(s.barman) ? s.barman : [s.barman]);
             const saveTitle = (val) => { setAppTitle(val); localStorage.setItem('appTitle', val); };
             const saveLogo = (val) => { setAppLogo(val); localStorage.setItem('appLogo', val); };
+            const saveTablesConfig = (val) => { setTablesConfig(val); localStorage.setItem('tablesConfig', val); };
 
             // --- SMART STATS CALCULATION ---
             const stats = useMemo(() => {
@@ -454,7 +455,7 @@
             
             const openGenSettings = () => { const h = currentDate.getMonth() >= 4 && currentDate.getMonth() <= 8; setGenTotal(h ? 6 : 4); setGenMorning(h ? 3 : 2); setSettingsTab('gen'); setShowSettings(true); };
             
-            // --- NEW CLIPBOARD LOGIC WITH UPDATED STYLES ---
+            // --- COPY LOGIC ---
             const copyToClipboard = () => {
                 const year = currentDate.getFullYear();
                 const month = currentDate.getMonth();
@@ -872,6 +873,13 @@
                                             <input value={appLogo} onChange={e=>saveLogo(e.target.value)} className="w-full bg-bg border border-surface2 rounded-xl p-3 text-white text-sm focus:border-accent outline-none" placeholder="https://..." />
                                             <p className="text-[10px] text-muted mt-1">Wklej link do obrazka (np. z Imgur)</p>
                                         </div>
+                                        
+                                        <div>
+                                            <label className="text-xs font-bold text-muted uppercase mb-1 block">Lista Stolików</label>
+                                            <input value={tablesConfig} onChange={e=>saveTablesConfig(e.target.value)} className="w-full bg-bg border border-surface2 rounded-xl p-3 text-white text-sm focus:border-accent outline-none" placeholder="1, 2, 3, VIP, Taras..." />
+                                            <p className="text-[10px] text-muted mt-1">Wpisz numery stolików po przecinku</p>
+                                        </div>
+
                                         <div className="pt-4 border-t border-surface2">
                                             {!confirmClean ? (
                                                 <button onClick={()=>setConfirmClean(true)} className="w-full py-3 border border-red-500/50 text-red-400 rounded-xl hover:bg-red-500/10 transition">{TEXT.cleanConfirm}</button>
@@ -952,9 +960,11 @@
                     {/* RES FORM MODAL */}
                     {showResForm && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={()=>setShowResForm(false)}>
-                            <div className="bg-surface border border-surface2 rounded-2xl w-full max-w-md p-6 shadow-2xl" onClick={e=>e.stopPropagation()}>
-                                <h3 className="text-xl font-bold text-white mb-6">{TEXT.resAddTitle}</h3>
-                                <div className="space-y-4">
+                            <div className="bg-surface border border-surface2 rounded-2xl w-full max-w-md p-6 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e=>e.stopPropagation()}>
+                                <div className="p-6 pb-0">
+                                    <h3 className="text-xl font-bold text-white mb-6">{TEXT.resAddTitle}</h3>
+                                </div>
+                                <div className="space-y-4 overflow-y-auto px-6 pb-6">
                                     <div>
                                         <label className="text-[10px] font-bold text-muted uppercase mb-1 block">{TEXT.resName}</label>
                                         <input className="w-full bg-bg border border-surface2 p-3 rounded-xl text-white focus:border-accent outline-none" value={newResData.name} onChange={e => setNewResData({...newResData, name: e.target.value})} />
@@ -969,24 +979,79 @@
                                             <input type="number" className="w-full bg-bg border border-surface2 p-3 rounded-xl text-white focus:border-accent outline-none" value={newResData.pax} onChange={e => setNewResData({...newResData, pax: e.target.value})} />
                                         </div>
                                     </div>
-                                    <div className="flex gap-3">
-                                        <div className="flex-1">
-                                            <label className="text-[10px] font-bold text-muted uppercase mb-1 block">{TEXT.resTables}</label>
-                                            <input className="w-full bg-bg border border-surface2 p-3 rounded-xl text-white focus:border-accent outline-none" value={newResData.tables} onChange={e => setNewResData({...newResData, tables: e.target.value})} />
+                                    
+                                    {/* TABLE SELECTION GRID */}
+                                    <div>
+                                        <label className="text-[10px] font-bold text-muted uppercase mb-2 block">Wybierz Stolik</label>
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {(() => {
+                                                const allTables = tablesConfig.split(',').map(t => t.trim()).filter(t => t);
+                                                const currentTables = newResData.tables ? newResData.tables.split(',').map(t => t.trim()) : [];
+                                                
+                                                // Calculate occupied tables for this day
+                                                const dateStr = resSelectedDate.toLocaleDateString('en-CA');
+                                                const dayReservations = reservations[dateStr] || [];
+                                                const occupiedTables = new Set();
+                                                
+                                                dayReservations.forEach(r => {
+                                                    // Ignore the current reservation being edited (if any)
+                                                    if (r.id === editingResId) return;
+                                                    // Ignore cancelled or done reservations - table is FREE
+                                                    if (r.status === 'cancelled' || r.status === 'done') return;
+                                                    
+                                                    if (r.tables) {
+                                                        r.tables.split(',').forEach(t => occupiedTables.add(t.trim()));
+                                                    }
+                                                });
+
+                                                return allTables.map(t => {
+                                                    const isSelected = currentTables.includes(t);
+                                                    const isOccupied = occupiedTables.has(t);
+                                                    
+                                                    let bgClass = "bg-bg border-surface2 text-muted hover:border-white"; // default free
+                                                    if (isOccupied) bgClass = "bg-surface2/30 border-surface2/30 text-surface2 occupied-pattern cursor-not-allowed"; // occupied
+                                                    if (isSelected) bgClass = "bg-accent border-accent text-white shadow-lg"; // selected
+
+                                                    return (
+                                                        <button 
+                                                            key={t}
+                                                            type="button"
+                                                            disabled={isOccupied && !isSelected}
+                                                            onClick={() => {
+                                                                if(isOccupied && !isSelected) return;
+                                                                const newSelection = isSelected 
+                                                                    ? currentTables.filter(ct => ct !== t) 
+                                                                    : [...currentTables, t];
+                                                                setNewResData({...newResData, tables: newSelection.join(', ')});
+                                                            }}
+                                                            className={`h-12 rounded-xl border text-sm font-bold transition flex items-center justify-center relative overflow-hidden ${bgClass}`}
+                                                        >
+                                                            {t}
+                                                            {isOccupied && !isSelected && <span className="absolute inset-0 bg-black/20"></span>}
+                                                        </button>
+                                                    );
+                                                });
+                                            })()}
                                         </div>
+                                        <input type="hidden" value={newResData.tables} /> 
+                                    </div>
+
+                                    <div className="flex gap-3">
                                         <div className="flex-1">
                                             <label className="text-[10px] font-bold text-muted uppercase mb-1 block">{TEXT.resDeposit}</label>
                                             <input type="number" className="w-full bg-bg border border-surface2 p-3 rounded-xl text-white focus:border-accent outline-none" value={newResData.deposit} onChange={e => setNewResData({...newResData, deposit: e.target.value})} />
                                         </div>
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] font-bold text-muted uppercase mb-1 block">{TEXT.resTakenBy}</label>
-                                        <input className="w-full bg-bg border border-surface2 p-3 rounded-xl text-white focus:border-accent outline-none" value={newResData.takenBy} onChange={e => setNewResData({...newResData, takenBy: e.target.value})} />
+                                        <div className="flex-1">
+                                            <label className="text-[10px] font-bold text-muted uppercase mb-1 block">{TEXT.resTakenBy}</label>
+                                            <input className="w-full bg-bg border border-surface2 p-3 rounded-xl text-white focus:border-accent outline-none" value={newResData.takenBy} onChange={e => setNewResData({...newResData, takenBy: e.target.value})} />
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="flex gap-3 mt-8">
-                                    <button onClick={()=>setShowResForm(false)} className="flex-1 py-3 text-muted hover:text-white transition">{TEXT.cancel}</button>
-                                    <button onClick={saveReservation} className="flex-1 py-3 bg-accent hover:bg-blue-600 text-white rounded-xl font-bold transition shadow-lg">{TEXT.save}</button>
+                                <div className="p-6 pt-0 mt-auto bg-surface border-t border-surface2">
+                                    <div className="flex gap-3 pt-4">
+                                        <button onClick={()=>setShowResForm(false)} className="flex-1 py-3 text-muted hover:text-white transition">{TEXT.cancel}</button>
+                                        <button onClick={saveReservation} className="flex-1 py-3 bg-accent hover:bg-blue-600 text-white rounded-xl font-bold transition shadow-lg">{TEXT.save}</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
