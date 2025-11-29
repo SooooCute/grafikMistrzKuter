@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUTER - System Grafik v0.0.6</title>
+    <title>KUTER - System Grafik v0.0.7</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -68,7 +68,7 @@
             errDiv.innerHTML = '<h3 style="margin-top:0">CRITICAL ERROR</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("--- KUTER SYSTEM v0.0.6 LOADED ---");
+        console.log("--- KUTER SYSTEM v0.0.7 LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -98,7 +98,7 @@
         // --- TEXTS ---
         const TEXT = {
             defaultAppName: "KUTER",
-            appSub: "System v0.0.6",
+            appSub: "System v0.0.7",
             tabStaff: "Zespół",
             tabCalendar: "Grafik",
             tabStats: "Raporty",
@@ -110,7 +110,8 @@
             genBtn: "Generuj",
             optimizeBtn: "Optymalizuj",
             exportGoogle: "📋 Kopiuj",
-            dateCol: "Dzień",
+            dateCol: "Data",
+            dayCol: "Dzień",
             barCol: "Bar",
             morningCol: "Rano",
             eveningCol: "Popołudnie",
@@ -236,7 +237,7 @@
             const getBarmanArray = (s) => (!s || !s.barman) ? [] : (Array.isArray(s.barman) ? s.barman : [s.barman]);
             const saveTitle = (val) => { setAppTitle(val); localStorage.setItem('appTitle', val); };
 
-            // --- SMART STATS CALCULATION ---
+            // --- SMART STATS CALCULATION (Real Presence) ---
             const stats = useMemo(() => {
                 const s = {}; 
                 const dim = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate();
@@ -246,27 +247,35 @@
                     s[p.id] = { h: 0, covers: 0, workedDays: 0 }; 
                 });
 
-                // Calculate hours and worked days
+                // Calculate hours and worked days (unique days present)
                 for(let i=1; i<=dim; i++) {
                     const dStr = new Date(currentDate.getFullYear(), currentDate.getMonth(), i).toLocaleDateString('en-CA');
                     const dw = new Date(currentDate.getFullYear(), currentDate.getMonth(), i).getDay();
                     const sh = schedule[dStr];
                     if(sh) {
+                        // Use a Set to track who worked today to avoid double counting if assigned multiple times
+                        const workersToday = new Set();
+                        
                         const bms = getBarmanArray(sh);
                         bms.forEach((bid, idx) => {
                             if(s[bid]) {
                                 let h = 12; if(dw===5 && idx>0) h=7; else if(dw===0 && idx>0) h=6;
                                 s[bid].h += h; 
-                                s[bid].workedDays++;
+                                workersToday.add(bid);
                                 if(getPerson(bid)?.role==='waiter') s[bid].covers++;
                             }
                         });
-                        sh.morning.forEach(id=>{if(s[id]) { s[id].h+=10; s[id].workedDays++; }});
-                        sh.evening.forEach(id=>{if(s[id]) { s[id].h+=12; s[id].workedDays++; }});
+                        sh.morning.forEach(id=>{ if(s[id]) { s[id].h+=10; workersToday.add(id); }});
+                        sh.evening.forEach(id=>{ if(s[id]) { s[id].h+=12; workersToday.add(id); }});
+                        
+                        // Increment worked days count
+                        workersToday.forEach(pid => {
+                            if (s[pid]) s[pid].workedDays++;
+                        });
                     }
                 }
                 
-                // Calculate True Days Off (Total Days - Worked Days)
+                // Calculate Real Days Off = Total Days in Month - Days Worked
                 Object.keys(s).forEach(pid => {
                     s[pid].off = dim - s[pid].workedDays;
                 });
@@ -388,7 +397,7 @@
             
             const openGenSettings = () => { const h = currentDate.getMonth() >= 4 && currentDate.getMonth() <= 8; setGenTotal(h ? 6 : 4); setGenMorning(h ? 3 : 2); setSettingsTab('gen'); setShowSettings(true); };
             
-            // --- COPY WITH FORMATTING ---
+            // --- COPY WITH PRO FORMATTING ---
             const copyToClipboard = () => {
                 const year = currentDate.getFullYear();
                 const month = currentDate.getMonth();
@@ -397,14 +406,15 @@
 
                 // 1. Plain Text (TSV)
                 let tsv = `GRAFIK: ${monthName}\n`;
-                tsv += "Dzień\tBar\tRano\tPopołudnie\n";
+                tsv += "Dzień\tDzień tyg.\tBar\tRano\tPopołudnie\n";
 
                 // 2. HTML for formatting
                 let html = `<table border="1" style="border-collapse: collapse; font-family: Arial, sans-serif;">
                     <thead>
-                        <tr><th colspan="4" style="font-size:16px; padding:10px; background-color:#1e293b; color:white;">GRAFIK: ${monthName}</th></tr>
+                        <tr><th colspan="5" style="font-size:16px; padding:10px; background-color:#1e293b; color:white;">GRAFIK: ${monthName}</th></tr>
                         <tr style="background-color: #f3f4f6; font-weight: bold;">
                             <th style="padding: 5px; border: 1px solid #000;">Dzień</th>
+                            <th style="padding: 5px; border: 1px solid #000;">Dzień tyg.</th>
                             <th style="padding: 5px; border: 1px solid #000; background-color: #e0e7ff; color: #312e81;">Bar</th>
                             <th style="padding: 5px; border: 1px solid #000; background-color: #ffedd5; color: #7c2d12;">Rano</th>
                             <th style="padding: 5px; border: 1px solid #000; background-color: #dbeafe; color: #1e3a8a;">Popołudnie</th>
@@ -433,42 +443,43 @@
                     const eve = s.evening.map(id => getPerson(id)?.name || "").join(", ");
 
                     // Build TSV
-                    tsv += `${dayNum} ${weekDay}\t${barmen}\t${morn}\t${eve}\n`;
+                    tsv += `${dayNum}\t${weekDay}\t${barmen}\t${morn}\t${eve}\n`;
 
                     // Build HTML
                     html += `<tr style="background-color: ${rowBg};">
-                        <td style="padding: 5px; border: 1px solid #000; white-space:nowrap;"><b>${dayNum}</b> <span style="color:#666;">${weekDay}</span> ${isHol ? '★' : ''}</td>
+                        <td style="padding: 5px; border: 1px solid #000; text-align:center;"><b>${dayNum}</b> ${isHol ? '★' : ''}</td>
+                        <td style="padding: 5px; border: 1px solid #000; text-align:center;">${weekDay}</td>
                         <td style="padding: 5px; border: 1px solid #000; color: #312e81;">${barmen}</td>
                         <td style="padding: 5px; border: 1px solid #000; color: #7c2d12;">${morn}</td>
                         <td style="padding: 5px; border: 1px solid #000; color: #1e3a8a;">${eve}</td>
                     </tr>`;
                 }
 
-                // --- DETAILED REPORT SECTION ---
-                html += `<tr><td colspan="4" style="border:none; height:20px;"></td></tr>
-                         <tr><td colspan="4" style="font-weight:bold; font-size:14px; border:1px solid #000; background-color:#f3f4f6; padding:5px;">RAPORT MIESIĘCZNY:</td></tr>`;
+                // --- DETAILED REPORT SECTION (SEPARATED) ---
+                html += `<tr><td colspan="5" style="border:none; height:20px;"></td></tr>
+                         <tr><td colspan="5" style="font-weight:bold; font-size:14px; border:1px solid #000; background-color:#f3f4f6; padding:5px;">RAPORT MIESIĘCZNY:</td></tr>`;
                 
                 // 1. Barmani
-                const barmen = people.filter(p => !p.archived && p.role === 'bartender');
-                if (barmen.length > 0) {
-                    html += `<tr><td colspan="4" style="font-weight:bold; background-color:#e0e7ff; border:1px solid #000; padding:3px;">BARMANI</td></tr>`;
-                    barmen.forEach(p => {
+                const barmenList = people.filter(p => !p.archived && p.role === 'bartender');
+                if (barmenList.length > 0) {
+                    html += `<tr><td colspan="5" style="font-weight:bold; background-color:#e0e7ff; border:1px solid #000; padding:5px; color:#312e81;">BARMANI</td></tr>`;
+                    barmenList.forEach(p => {
                         const s = stats[p.id] || { h: 0, covers: 0, off: 0 };
-                        html += `<tr><td colspan="4" style="border:1px solid #000; padding:2px;">
-                            <b>${p.name}</b>: <span style="color:#1d4ed8;">${s.h}h</span> | <span style="color:#dc2626;">Wolne: ${s.off}</span>
+                        html += `<tr><td colspan="5" style="border:1px solid #000; padding:2px 5px;">
+                            <b>${p.name}</b>: <span style="color:#1d4ed8; font-weight:bold;">${s.h}h</span> | <span style="color:#dc2626;">Wolne: ${s.off}</span>
                         </td></tr>`;
                     });
                 }
 
                 // 2. Obsługa
-                const waiters = people.filter(p => !p.archived && p.role === 'waiter');
-                if (waiters.length > 0) {
-                    html += `<tr><td colspan="4" style="font-weight:bold; background-color:#ffedd5; border:1px solid #000; padding:3px;">OBSŁUGA</td></tr>`;
-                    waiters.forEach(p => {
+                const waitersList = people.filter(p => !p.archived && p.role === 'waiter');
+                if (waitersList.length > 0) {
+                    html += `<tr><td colspan="5" style="font-weight:bold; background-color:#ffedd5; border:1px solid #000; padding:5px; color:#7c2d12;">OBSŁUGA</td></tr>`;
+                    waitersList.forEach(p => {
                         const s = stats[p.id] || { h: 0, covers: 0, off: 0 };
-                        const barInfo = s.covers > 0 ? ` | <span style="color:#d97706;">Bar: ${s.covers}</span>` : "";
-                        html += `<tr><td colspan="4" style="border:1px solid #000; padding:2px;">
-                            <b>${p.name}</b>: <span style="color:#1d4ed8;">${s.h}h</span> | <span style="color:#dc2626;">Wolne: ${s.off}</span>${barInfo}
+                        const barInfo = s.covers > 0 ? ` | <span style="color:#d97706; font-weight:bold;">Bar: ${s.covers}</span>` : "";
+                        html += `<tr><td colspan="5" style="border:1px solid #000; padding:2px 5px;">
+                            <b>${p.name}</b>: <span style="color:#1d4ed8; font-weight:bold;">${s.h}h</span> | <span style="color:#dc2626;">Wolne: ${s.off}</span>${barInfo}
                         </td></tr>`;
                     });
                 }
@@ -965,7 +976,7 @@
                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
                         <div className="text-center mb-8">
                             <h1 className="text-3xl font-bold tracking-tighter mb-1">KUTER</h1>
-                            <p className="text-muted text-sm uppercase tracking-widest">System v0.0.5</p>
+                            <p className="text-muted text-sm uppercase tracking-widest">System v0.0.7</p>
                         </div>
                         <form onSubmit={handle} className="space-y-4">
                             <div>
