@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KUTER - System Grafik v0.0.6</title>
+    <title>KUTER - System Grafik v8.2</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -46,6 +46,25 @@
     
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; -webkit-tap-highlight-color: transparent; }
+        
+        /* Mobile Optimizations */
+        .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+        
+        /* Print Styles */
+        @media print {
+            @page { size: A4 landscape; margin: 5mm; }
+            body { background: white !important; color: black !important; zoom: 0.65; }
+            .no-print { display: none !important; }
+            .print-show { display: block !important; }
+            ::-webkit-scrollbar { display: none; }
+            body, #root, main { height: auto !important; overflow: visible !important; }
+            table { width: 100%; border-collapse: collapse; font-size: 11px; }
+            th, td { border: 1px solid #000 !important; padding: 3px !important; color: black !important; }
+            .bg-surface, .bg-bg { background: white !important; color: black !important; }
+            .badge { border: 1px solid #000; color: black !important; background: white !important; }
+        }
+        .print-show { display: none; }
+        
         .loader {
             border: 3px solid #334155;
             border-top: 3px solid #3b82f6;
@@ -68,7 +87,7 @@
             errDiv.innerHTML = '<h3 style="margin-top:0">CRITICAL ERROR</h3><p>' + message + '</p><p>Line: ' + lineno + '</p>';
             document.body.prepend(errDiv);
         };
-        console.log("--- KUTER SYSTEM v0.0.6 LOADED ---");
+        console.log("--- KUTER SYSTEM v8.2 LOADED ---");
     </script>
 
     <script type="text/babel">
@@ -93,24 +112,27 @@
             }
             auth = firebase.auth();
             db = firebase.firestore();
-        } catch (e) { console.error("Init Error", e); }
+        } catch (e) {
+            console.error("Firebase Init Error:", e);
+        }
 
         // --- TEXTS ---
         const TEXT = {
             defaultAppName: "KUTER",
-            appSub: "System v0.0.6",
+            appSub: "System v8.2",
             tabStaff: "Zespół",
             tabCalendar: "Grafik",
             tabStats: "Raporty",
             tabReservations: "Rezerwacje",
             secWaiters: "Obsługa",
             secBartenders: "Bar",
-            addBtn: "Dodaj Pracownika",
+            addBtn: "Dodaj",
             namePlaceholder: "Nazwisko...",
             genBtn: "Generuj",
             optimizeBtn: "Optymalizuj",
-            exportGoogle: "📋 Kopiuj",
-            dateCol: "Dzień",
+            exportGoogle: "Kopiuj (Google)",
+            printBtn: "Drukuj",
+            dateCol: "Data",
             barCol: "Bar",
             morningCol: "Rano",
             eveningCol: "Popołudnie",
@@ -136,7 +158,7 @@
             cleanBtn: "Usuń Trwale",
             headerName: "Nazwa Lokalu",
             errorAuth: "Błąd danych.",
-            copySuccess: "Skopiowano! Wklej (Ctrl+V) w Excelu lub Google Sheets.",
+            copySuccess: "Skopiowano!",
             optimizing: "Przeliczanie...",
             resAddBtn: "+ Nowa Rezerwacja",
             resGridBtn: "📅 Kalendarz",
@@ -236,17 +258,9 @@
             const getBarmanArray = (s) => (!s || !s.barman) ? [] : (Array.isArray(s.barman) ? s.barman : [s.barman]);
             const saveTitle = (val) => { setAppTitle(val); localStorage.setItem('appTitle', val); };
 
-            // --- SMART STATS CALCULATION ---
             const stats = useMemo(() => {
-                const s = {}; 
+                const s = {}; people.forEach(p => s[p.id] = { h: 0, covers: 0 });
                 const dim = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate();
-                
-                // Initialize stats
-                people.forEach(p => { 
-                    s[p.id] = { h: 0, covers: 0, workedDays: 0 }; 
-                });
-
-                // Calculate hours and worked days
                 for(let i=1; i<=dim; i++) {
                     const dStr = new Date(currentDate.getFullYear(), currentDate.getMonth(), i).toLocaleDateString('en-CA');
                     const dw = new Date(currentDate.getFullYear(), currentDate.getMonth(), i).getDay();
@@ -256,21 +270,13 @@
                         bms.forEach((bid, idx) => {
                             if(s[bid]) {
                                 let h = 12; if(dw===5 && idx>0) h=7; else if(dw===0 && idx>0) h=6;
-                                s[bid].h += h; 
-                                s[bid].workedDays++;
-                                if(getPerson(bid)?.role==='waiter') s[bid].covers++;
+                                s[bid].h += h; if(getPerson(bid)?.role==='waiter') s[bid].covers++;
                             }
                         });
-                        sh.morning.forEach(id=>{if(s[id]) { s[id].h+=10; s[id].workedDays++; }});
-                        sh.evening.forEach(id=>{if(s[id]) { s[id].h+=12; s[id].workedDays++; }});
+                        sh.morning.forEach(id=>{if(s[id]) s[id].h+=10});
+                        sh.evening.forEach(id=>{if(s[id]) s[id].h+=12});
                     }
                 }
-                
-                // Calculate True Days Off (Total Days - Worked Days)
-                Object.keys(s).forEach(pid => {
-                    s[pid].off = dim - s[pid].workedDays;
-                });
-
                 return s;
             }, [people, schedule, currentDate]);
 
@@ -387,109 +393,17 @@
             };
             
             const openGenSettings = () => { const h = currentDate.getMonth() >= 4 && currentDate.getMonth() <= 8; setGenTotal(h ? 6 : 4); setGenMorning(h ? 3 : 2); setSettingsTab('gen'); setShowSettings(true); };
-            
-            // --- COPY WITH FORMATTING ---
-            const copyToClipboard = () => {
-                const year = currentDate.getFullYear();
-                const month = currentDate.getMonth();
-                const dim = new Date(year, month + 1, 0).getDate();
-                const monthName = currentDate.toLocaleString('pl-PL', { month: 'long', year: 'numeric' }).toUpperCase();
-
-                // 1. Plain Text (TSV)
-                let tsv = `GRAFIK: ${monthName}\n`;
-                tsv += "Dzień\tBar\tRano\tPopołudnie\n";
-
-                // 2. HTML for formatting
-                let html = `<table border="1" style="border-collapse: collapse; font-family: Arial, sans-serif;">
-                    <thead>
-                        <tr><th colspan="4" style="font-size:16px; padding:10px; background-color:#1e293b; color:white;">GRAFIK: ${monthName}</th></tr>
-                        <tr style="background-color: #f3f4f6; font-weight: bold;">
-                            <th style="padding: 5px; border: 1px solid #000;">Dzień</th>
-                            <th style="padding: 5px; border: 1px solid #000; background-color: #e0e7ff; color: #312e81;">Bar</th>
-                            <th style="padding: 5px; border: 1px solid #000; background-color: #ffedd5; color: #7c2d12;">Rano</th>
-                            <th style="padding: 5px; border: 1px solid #000; background-color: #dbeafe; color: #1e3a8a;">Popołudnie</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-
+            const copyToGoogle = () => {
+                const y = currentDate.getFullYear(); const m = currentDate.getMonth(); const dim = new Date(y, m + 1, 0).getDate();
+                let tsv = "Data\tDzień\tŚwięto\tBar\tRano\tPopołudnie\n";
                 for (let d = 1; d <= dim; d++) {
-                    const date = new Date(year, month, d);
-                    const ds = date.toLocaleDateString('en-CA');
-                    const s = schedule[ds] || { morning: [], evening: [], barman: [] };
-                    
-                    const isHol = holidays.includes(ds);
-                    const isWknd = [0, 6].includes(date.getDay());
-
-                    // Row Styling
-                    let rowBg = "#ffffff";
-                    if (isHol) rowBg = "#fee2e2"; 
-                    else if (isWknd) rowBg = "#f1f5f9";
-
-                    // Data
-                    const dayNum = d;
-                    const weekDay = date.toLocaleDateString('pl-PL', {weekday: 'short'});
-                    const barmen = getBarmanArray(s).map(id => getPerson(id)?.name || "").join(", ");
-                    const morn = s.morning.map(id => getPerson(id)?.name || "").join(", ");
-                    const eve = s.evening.map(id => getPerson(id)?.name || "").join(", ");
-
-                    // Build TSV
-                    tsv += `${dayNum} ${weekDay}\t${barmen}\t${morn}\t${eve}\n`;
-
-                    // Build HTML
-                    html += `<tr style="background-color: ${rowBg};">
-                        <td style="padding: 5px; border: 1px solid #000; white-space:nowrap;"><b>${dayNum}</b> <span style="color:#666;">${weekDay}</span> ${isHol ? '★' : ''}</td>
-                        <td style="padding: 5px; border: 1px solid #000; color: #312e81;">${barmen}</td>
-                        <td style="padding: 5px; border: 1px solid #000; color: #7c2d12;">${morn}</td>
-                        <td style="padding: 5px; border: 1px solid #000; color: #1e3a8a;">${eve}</td>
-                    </tr>`;
+                    const date = new Date(y, m, d); const ds = date.toLocaleDateString('en-CA'); const s = schedule[ds] || { morning: [], evening: [], barman: [] };
+                    const bms = getBarmanArray(s).map(id => getPerson(id)?.name || "").join(", ");
+                    const mns = s.morning.map(id => getPerson(id)?.name || "").join(", ");
+                    const ens = s.evening.map(id => getPerson(id)?.name || "").join(", ");
+                    tsv += `${date.toLocaleDateString('pl-PL')}\t${date.toLocaleDateString('pl-PL',{weekday:'long'})}\t${holidays.includes(ds)?"TAK":""}\t${bms}\t${mns}\t${ens}\n`;
                 }
-
-                // --- DETAILED REPORT SECTION ---
-                html += `<tr><td colspan="4" style="border:none; height:20px;"></td></tr>
-                         <tr><td colspan="4" style="font-weight:bold; font-size:14px; border:1px solid #000; background-color:#f3f4f6; padding:5px;">RAPORT MIESIĘCZNY:</td></tr>`;
-                
-                // 1. Barmani
-                const barmen = people.filter(p => !p.archived && p.role === 'bartender');
-                if (barmen.length > 0) {
-                    html += `<tr><td colspan="4" style="font-weight:bold; background-color:#e0e7ff; border:1px solid #000; padding:3px;">BARMANI</td></tr>`;
-                    barmen.forEach(p => {
-                        const s = stats[p.id] || { h: 0, covers: 0, off: 0 };
-                        html += `<tr><td colspan="4" style="border:1px solid #000; padding:2px;">
-                            <b>${p.name}</b>: <span style="color:#1d4ed8;">${s.h}h</span> | <span style="color:#dc2626;">Wolne: ${s.off}</span>
-                        </td></tr>`;
-                    });
-                }
-
-                // 2. Obsługa
-                const waiters = people.filter(p => !p.archived && p.role === 'waiter');
-                if (waiters.length > 0) {
-                    html += `<tr><td colspan="4" style="font-weight:bold; background-color:#ffedd5; border:1px solid #000; padding:3px;">OBSŁUGA</td></tr>`;
-                    waiters.forEach(p => {
-                        const s = stats[p.id] || { h: 0, covers: 0, off: 0 };
-                        const barInfo = s.covers > 0 ? ` | <span style="color:#d97706;">Bar: ${s.covers}</span>` : "";
-                        html += `<tr><td colspan="4" style="border:1px solid #000; padding:2px;">
-                            <b>${p.name}</b>: <span style="color:#1d4ed8;">${s.h}h</span> | <span style="color:#dc2626;">Wolne: ${s.off}</span>${barInfo}
-                        </td></tr>`;
-                    });
-                }
-                
-                html += `</tbody></table>`;
-
-                const blobText = new Blob([tsv], { type: 'text/plain' });
-                const blobHtml = new Blob([html], { type: 'text/html' });
-                
-                try {
-                    const item = new ClipboardItem({ 
-                        "text/plain": blobText, 
-                        "text/html": blobHtml 
-                    });
-                    navigator.clipboard.write([item]).then(
-                        () => alert(TEXT.copySuccess),
-                        (err) => navigator.clipboard.writeText(tsv).then(() => alert(TEXT.copySuccess))
-                    );
-                } catch (e) {
-                     navigator.clipboard.writeText(tsv).then(() => alert(TEXT.copySuccess));
-                }
+                navigator.clipboard.writeText(tsv).then(()=>alert(TEXT.copySuccess));
             };
 
             if(!isAuthReady) return <div className="flex h-screen items-center justify-center bg-bg text-text"><div className="loader"></div></div>;
@@ -531,9 +445,8 @@
                         </header>
 
                         <div className="flex-grow overflow-y-auto p-4 md:p-8">
-                            {/* TITLE */}
-                            <div className="mb-4 border-b border-surface2 pb-2 flex justify-between items-end">
-                                <h1 className="text-2xl font-bold text-white">{appTitle} - {activeTab==='reservations' ? TEXT.tabReservations : 'Grafik'}: {getMonthName(currentDate)}</h1>
+                            <div className="hidden print-show mb-4 border-b pb-2">
+                                <h1 className="text-2xl font-bold text-black">{appTitle} - {activeTab==='reservations' ? TEXT.tabReservations : 'Grafik'}: {getMonthName(currentDate)}</h1>
                             </div>
 
                             {/* STAFF */}
@@ -558,8 +471,7 @@
                                                                 </div>
                                                                 <div className="flex flex-wrap gap-1 no-print">
                                                                     {Array.from({length: new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate()}, (_, i)=>i+1).map(d => {
-                                                                        const dObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), d);
-                                                                        const dStr = dObj.toLocaleDateString('en-CA');
+                                                                        const dStr = new Date(currentDate.getFullYear(), currentDate.getMonth(), d).toLocaleDateString('en-CA');
                                                                         const isOff = p.daysOff.includes(dStr);
                                                                         const isWknd = [0, 5, 6].includes(dObj.getDay());
                                                                         let btnClass = "bg-surface2 text-muted hover:bg-accent hover:text-white";
@@ -585,9 +497,10 @@
                                     <div className="p-4 border-b border-surface2 flex justify-between items-center bg-bg/30 no-print">
                                         <div className="text-xs text-muted uppercase font-bold tracking-wider">Grafik Zmian</div>
                                         <div className="flex gap-2">
-                                            <button onClick={copyToClipboard} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow-lg shadow-emerald-900/20 flex items-center gap-2">
+                                            <button onClick={copyToGoogle} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow-lg shadow-emerald-900/20 flex items-center gap-2">
                                                 {TEXT.exportGoogle}
                                             </button>
+                                            <button onClick={()=>window.print()} className="bg-surface2 hover:bg-surface2/80 text-xs px-3 py-2 rounded-lg transition">{TEXT.printBtn}</button>
                                         </div>
                                     </div>
                                     <div className="overflow-x-auto">
@@ -638,6 +551,13 @@
                                                 })}
                                             </tbody>
                                         </table>
+                                    </div>
+                                    {/* PRINT FOOTER STATS */}
+                                    <div className="print-stats no-print print-show">
+                                        <div className="w-full font-bold mb-2 border-b border-black pb-1">RAPORT GODZIN:</div>
+                                        {people.filter(p=>!p.archived).map(p=>(
+                                            <div key={p.id} className="print-stat-item">{p.name}: {stats[p.id].h}h</div>
+                                        ))}
                                     </div>
                                 </div>
                             )}
