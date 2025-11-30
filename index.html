@@ -189,12 +189,12 @@
             );
         }
 
-        // --- AUTH SCREEN (С ЗАЩИТОЙ) ---
+        // --- AUTH SCREEN (PL - PROTECTED) ---
         function AuthScreen() {
             const [isReg, setIsReg] = useState(false);
             const [email, setEmail] = useState('');
             const [pass, setPass] = useState('');
-            const [code, setCode] = useState(''); // Новое поле для кода
+            const [code, setCode] = useState(''); 
             const [err, setErr] = useState('');
             const [busy, setBusy] = useState(false);
 
@@ -205,9 +205,9 @@
                 
                 try {
                     if (isReg) {
-                        // --- ЛОГИКА РЕГИСТРАЦИИ С ПРОВЕРКОЙ КОДА ---
+                        // --- LOGIKA REJESTRACJI Z KODEM ---
                         
-                        // 1. Ищем код в базе
+                        // 1. Szukamy kodu w bazie
                         const codeSnap = await db.collection('access_codes')
                             .where('code', '==', code.trim())
                             .where('status', '==', 'active')
@@ -215,15 +215,15 @@
                             .get();
 
                         if (codeSnap.empty) {
-                            throw new Error("Неверный или использованный код доступа!");
+                            throw new Error("Nieprawidłowy lub wykorzystany kod dostępu!");
                         }
 
                         const codeDoc = codeSnap.docs[0];
 
-                        // 2. Создаем юзера
+                        // 2. Tworzymy użytkownika
                         const cred = await auth.createUserWithEmailAndPassword(email, pass);
                         
-                        // 3. "Гасим" код, чтобы его не передали другу
+                        // 3. "Gasimy" kod (dezaktywacja)
                         await db.collection('access_codes').doc(codeDoc.id).update({
                             status: 'used',
                             usedBy: cred.user.uid,
@@ -231,17 +231,18 @@
                         });
 
                     } else {
-                        // --- ОБЫЧНЫЙ ВХОД ---
+                        // --- LOGOWANIE ---
                         await auth.signInWithEmailAndPassword(email, pass);
                     }
                 } catch(e) { 
                     console.error(e); 
-                    // Перевод частых ошибок Firebase на русский
-                    let msg = "Ошибка. Проверьте данные.";
-                    if(e.message.includes("code")) msg = e.message; 
-                    if(e.code === 'auth/email-already-in-use') msg = "Этот Email уже занят.";
-                    if(e.code === 'auth/wrong-password') msg = "Неверный пароль.";
-                    if(e.code === 'auth/user-not-found') msg = "Пользователь не найден.";
+                    // Tłumaczenie błędów Firebase na polski
+                    let msg = "Błąd logowania. Sprawdź dane.";
+                    if(e.message.includes("kod")) msg = e.message; 
+                    if(e.code === 'auth/email-already-in-use') msg = "Ten email jest już zajęty.";
+                    if(e.code === 'auth/wrong-password') msg = "Nieprawidłowe hasło.";
+                    if(e.code === 'auth/user-not-found') msg = "Nie znaleziono użytkownika.";
+                    if(e.code === 'auth/invalid-email') msg = "Nieprawidłowy format email.";
                     
                     setErr(msg); 
                 } finally {
@@ -255,12 +256,12 @@
                     <div className="bg-surface/90 backdrop-blur-xl border border-surface2 p-8 rounded-3xl shadow-2xl w-full max-w-md relative z-10">
                         <div className="text-center mb-8">
                             <h1 className="text-4xl font-black tracking-tighter mb-2 bg-gradient-to-r from-blue-400 to-indigo-600 bg-clip-text text-transparent">KUTER</h1>
-                            <p className="text-muted text-xs uppercase tracking-[0.3em]">Система v0.0.13 Protected</p>
+                            <p className="text-muted text-xs uppercase tracking-[0.3em]">System v0.0.13 (Licencja)</p>
                         </div>
                         <form onSubmit={handle} className="space-y-4">
                             {isReg && (
                                 <div className="bg-accent/10 p-3 rounded-xl border border-accent/20 mb-4">
-                                    <label className="text-[10px] font-bold text-accent uppercase mb-1 block pl-1">Код доступа (Лицензия)</label>
+                                    <label className="text-[10px] font-bold text-accent uppercase mb-1 block pl-1">Kod Dostępu (Licencja)</label>
                                     <input 
                                         type="text" 
                                         required={isReg} 
@@ -269,7 +270,7 @@
                                         onChange={e=>setCode(e.target.value)} 
                                         placeholder="XXXX-XXXX" 
                                     />
-                                    <p className="text-[9px] text-muted mt-1 px-1">Введите код, полученный при покупке.</p>
+                                    <p className="text-[9px] text-muted mt-1 px-1">Wpisz kod otrzymany przy zakupie.</p>
                                 </div>
                             )}
                         
@@ -286,19 +287,18 @@
                             
                             <button disabled={busy} className="w-full bg-accent hover:bg-accentHover text-white py-3.5 rounded-xl font-bold transition shadow-lg shadow-blue-900/20 mt-4 disabled:opacity-50 disabled:cursor-not-allowed">
                                 {busy ? <span className="inline-block animate-spin mr-2">⟳</span> : null}
-                                {busy ? 'Проверка...' : isReg ? "Активировать и Войти" : "Войти"}
+                                {busy ? 'Weryfikacja...' : isReg ? "Aktywuj i Wejdź" : "Zaloguj się"}
                             </button>
                         </form>
                         <div className="mt-8 text-center border-t border-surface2 pt-6">
                             <button onClick={()=>{setIsReg(!isReg); setErr('');}} className="text-xs text-muted hover:text-white transition underline decoration-dotted underline-offset-4">
-                                {isReg ? "Уже активировали? Войти" : "У меня есть новый код доступа"}
+                                {isReg ? "Masz już konto? Zaloguj się" : "Mam nowy kod dostępu (Rejestracja)"}
                             </button>
                         </div>
                     </div>
                 </div>
             );
         }
-
         // --- APP COMPONENT ---
         function App() {
             const [user, setUser] = useState(null);
@@ -1181,4 +1181,5 @@
     </script>
 </body>
 </html>
+
 
